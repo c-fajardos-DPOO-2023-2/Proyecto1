@@ -155,7 +155,7 @@ public class Inventario {
                 	Date fechaEntrega = dateFormat.parse(infoReserva[3]);
                 	Date fechaRetorno = dateFormat.parse(infoReserva[4]);
                     
-                	Reserva reserva = new Reserva(infoReserva[0], fechaEntrega, fechaRetorno, infoReserva[5], infoReserva[6], infoReserva[1], infoReserva[2]);
+                	Reserva reserva = new Reserva(infoReserva[0], fechaEntrega, fechaRetorno, infoReserva[5], infoReserva[6], infoReserva[1], infoReserva[2], infoReserva[9]);
                 	reserva.setPrecio(Double.parseDouble(infoReserva[7]));
                 	reserva.setPrecioAbonado(Double.parseDouble(infoReserva[8]));
                     

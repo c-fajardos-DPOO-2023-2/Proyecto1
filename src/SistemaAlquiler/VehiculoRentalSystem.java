@@ -79,7 +79,6 @@ public class VehiculoRentalSystem {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -152,7 +151,6 @@ public class VehiculoRentalSystem {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -307,8 +305,7 @@ public class VehiculoRentalSystem {
         String contenido = "\n" + empleado.getSede() + "," + empleado.getLogin()+ "," + empleado.getContrasena();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
-        	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
+        	writer.write(contenido); 
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -339,7 +336,6 @@ public class VehiculoRentalSystem {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  // Agrega una nueva línea al final
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -356,14 +352,6 @@ public class VehiculoRentalSystem {
     }
     
     /**
-     * Eliminar una reserva del sistema.
-     *
-     * @param car El vehículo a agregar.
-     */
-    public void removeReserva(Reserva reserva) {
-    	reservas.remove(reserva);    }
-    
-    /**
      * Escribe la información de una reserva en el archivo de reservas.
      *
      * @param reserva La reserva que se va a escribir en el archivo.
@@ -378,42 +366,16 @@ public class VehiculoRentalSystem {
     	
         String contenido = reserva.getCategoria() + "," + reserva.getIdSedeRecoger()+ "," 
     	+ reserva.getIdSedeDevolver() + "," + fechaEntrega + "," + fechaRetorno 
-    	+ "," + reserva.getCliente() + "," + reserva.getIdCarro() + "," + reserva.getPrecioBase() + "," + reserva.getPrecioAbonado() + "\n";
+    	+ "," + reserva.getCliente() + "," + reserva.getIdCarro() + "," + reserva.getPrecioBase() + "," 
+    	+ reserva.getPrecioAbonado() + "," + reserva.getEstado() + "\n";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
     }
     
-    /**
-     * Elimina la información de una reserva del archivo de inventario.
-     *
-     * @param vehiculo La reserva que se va a eliminar del archivo.
-     * @throws IOException Si ocurre un error al eliminar la información de la reserva.
-     */
-    public void eliminarReserva(Reserva reserva) {
-    	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
-    		String line;
-    		String input = "";
-    		while ((line = reader.readLine()) != null) {
-                String[] reservaInfo = line.split(",");
-                if (reserva.getIdCarro().equals(reservaInfo[6])) {
-                }else {
-                	input += line+"\n";
-                }
-            }
-    		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Reservas");
-    		    fileOut.write(input.getBytes());
-    		    fileOut.close();
-           
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
     
     /**
      * Modifica la sede de entrega o retorno en el archivo de reservas.
@@ -529,6 +491,29 @@ public class VehiculoRentalSystem {
         }
     }
     
+    public void modificarEstadoReserva(Reserva reserva, String nuevoEstado, String cliente) {
+    	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+    		String line;
+    		String input = "";
+    		while ((line = reader.readLine()) != null) {
+                String[] infoReserva = line.split(",");
+                
+                if (reserva.getCliente().equals(cliente)) {
+                	input += line.replaceAll(infoReserva[9],nuevoEstado)+"\n";
+                }else {
+                    input += line+"\n";
+                }
+            }
+    		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Reservas");
+    		    fileOut.write(input.getBytes());
+    		    fileOut.close();
+           
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
     //Conductor
     /**
      * Agrega un conductor a la lista de conductores.
@@ -557,7 +542,6 @@ public class VehiculoRentalSystem {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -594,11 +578,10 @@ public class VehiculoRentalSystem {
     	String fechaFinal = fecha.format(agendaCarro.getFechaFinal());
     	
         String contenido = IdCarro + "," +  fechaInicio + "," 
-    	+ fechaFinal + "," + "," +agendaCarro.getEstadoCarro() + "\n";
+    	+ fechaFinal + "," +agendaCarro.getEstadoCarro() + "\n";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -676,7 +659,6 @@ public class VehiculoRentalSystem {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
-            System.out.println("Contenido escrito en el archivo.");
         } catch (IOException e) {
         	System.err.println("Ocurrió un error al escribir en el archivo: " + e.getMessage());
         }
@@ -705,7 +687,18 @@ public class VehiculoRentalSystem {
             	System.out.println("El vehículo no estará disponible desde " + indisponibilidad.getFechaInicio());
             	System.out.println("hasta " + indisponibilidad.getFechaFinal());
             }
-                System.out.println("Se encuentra en la sede: " + vehiculoConsultado.getUbicacion());
+            System.out.println("Se encuentra en la sede: " + vehiculoConsultado.getUbicacion());
+            System.out.println("Reservas:");
+            for(Reserva reserva: reservas) {
+            	if (reserva.getIdCarro().equals(vehiculoID)) {
+            		System.out.println("Reservado desde: " + reserva.getFechaEntrega());
+            		System.out.println("Reservado hasta: " + reserva.getFechaRetorno());
+            		System.out.println("Reservado por: " + reserva.getCliente());
+            		System.out.println("Estado actual de la reserva: " + reserva.getEstado());
+            		System.out.println("-------------------------------------------------------");
+            		
+            	}
+            }
             
         } else {
             System.out.println("Vehículo no encontrado.");
@@ -858,20 +851,20 @@ public class VehiculoRentalSystem {
                     	sedeDevolver.agregarVehiculo(carToReturn);
                     	Sede sedeRecoger = sedes.get(reserva.getIdSedeRecoger());
                     	sedeRecoger.eliminarVehiculo(carToReturn);
-                    	removeReserva(reserva);
-                    	eliminarReserva(reserva);
+                    	reserva.setEstado("terminada");
+                    	modificarEstadoReserva(reserva, "terminada", cliente.getName());
                     }
                     break;
                 }
             }
 
             if (cliente != null) {
-                AgendaCarro agenda = carToReturn.entregar(fechaHoy, fechaFinal);
+            	AgendaCarro agenda = carToReturn.entregar(fechaHoy, fechaFinal);
                 addAgendasCarros(carToReturn.getVehiculoId(), agenda);
                 escribirAgendasCarros(carToReturn.getVehiculoId(), agenda);
                 
                 System.out.println("Vehículo retornado de manera exitosa por el cliente: " + cliente.getName());
-                System.out.print("A partir de este momento la tarjeta del cliente queda nuevamente activada");
+                System.out.println("A partir de este momento la tarjeta del cliente queda nuevamente activada");
             } else {
                 System.out.println("El vehículo no fue rentado o falta información");
             }
@@ -1010,7 +1003,9 @@ public class VehiculoRentalSystem {
      */
     public void CargaEmpleadosASede(Empleado empleado) {
     	for(Sede sede : sedes.values()) {
-    		sede.agregarEmpleado(empleado);
+    		if(empleado.getSede().equals(sede.getNombre())) {
+    			sede.agregarEmpleado(empleado);
+    		}
     	}
     }
     
@@ -1021,7 +1016,9 @@ public class VehiculoRentalSystem {
      */
     public void CargaCarrosASede(Vehiculo vehiculo) {
     	for(Sede sede : sedes.values()) {
-    		sede.agregarVehiculo(vehiculo);;
+    		if (vehiculo.getUbicacion().equals(sede.getNombre())){
+    			sede.agregarVehiculo(vehiculo);;
+    		}
     	}
     }
     
@@ -1203,9 +1200,7 @@ public class VehiculoRentalSystem {
     	            }
     			}
     		}
-            
-            
-            
+
             if (!availableCarsIncategoria.isEmpty()) {
                 // Seleccionar un carro aleatorio de la categoría
                 Random random = new Random();
@@ -1221,36 +1216,27 @@ public class VehiculoRentalSystem {
                 // Resto del código para alquilar el coche
                 // Utiliza el método calculatePrice con diasRenta y temporadaAlta
                 // para calcular el precio y mostrarlo al usuario.
-                Reserva reserva = new Reserva(categoriaInput, startDate, endDate, newCliente.getName(), selectedCar.getVehiculoId(), NombreSedeRecoger, NombreSedeDevolver);
-                
-                Categoria categoria = categorias.get(categoriaInput);
-                double totalPrice = reserva.getPrecio(diasRenta, tarifa,  categoria.getvalorSedeDiferente());
-                System.out.println("\n===== Información del alquiler =====\n");
-                System.out.println("Cliente Name: " + newCliente.getName());
-                System.out.println("Vehiculo: " + selectedCar.getmarca() + " " + selectedCar.getmodelo());
-                System.out.println("Rental Days: " + diasRenta);
-                System.out.printf("Precio total: $%.2f%n", totalPrice);
-
-                totalPrice = seleccionarSeguros(scanner, reserva, totalPrice, diasRenta);
-                reserva.setPrecio(totalPrice);
-                
-                System.out.print("\n¿Confirma el alquiler? (Y/N): ");
-                String confirm = scanner.nextLine();
-                
-                if (confirm.equalsIgnoreCase("Y")) {
-                	addReserva(reserva);
-                	AgendaCarro agenda = selectedCar.reservar(startDate, endDate);
-                	addAgendasCarros(selectedCar.getVehiculoId(), agenda);
-                	escribirAgendasCarros(selectedCar.getVehiculoId(), agenda);
-                    System.out.println("\nCarro alquilado exitosamente");
-                    double treintaPct = reserva.get30ptcPrecio(totalPrice);
-                    reserva.setPrecioAbonado(treintaPct);
-                    escribirReserva(reserva);
-                    System.out.print("Se te descontó el 30% del valor de la compra de tu tarjeta: $" + treintaPct);
-                    
-                } else {
-                    System.out.println("\nRenta cancelada");
+                boolean reservaVigente = false;
+                if(reservas.size() != 0) {
+                	for(Reserva res: reservas) {
+                    	if(res.getCliente().equals(newCliente.getName())&& res.getEstado().equals("vigente")) {
+                    		reservaVigente = true;
+                    	}
+                	}
+                    if(!reservaVigente) {
+                    	generarReserva(categoriaInput, startDate, endDate, newCliente, selectedCar, 
+                				NombreSedeRecoger, NombreSedeDevolver, diasRenta, tarifa, scanner);
+                    }else {
+                    	System.out.println("Ya tiene una reserva vigente, no puede generar otra reserva");
+                    }
+                }else {
+                	generarReserva(categoriaInput, startDate, endDate, newCliente, selectedCar, 
+            				NombreSedeRecoger, NombreSedeDevolver, diasRenta, tarifa, scanner);
                 }
+                
+                
+                
+                
             } else {
                 System.out.println("\nNo hay carros disponibles en la categoría seleccionada, disculpas.");
             }
@@ -1259,6 +1245,40 @@ public class VehiculoRentalSystem {
                 System.out.println("Invalid date format");
             }
         }
+    
+    private void generarReserva(String categoriaInput, Date startDate, Date endDate, Cliente newCliente, 
+    		Vehiculo selectedCar, String NombreSedeRecoger, String NombreSedeDevolver, int diasRenta, int tarifa, Scanner scanner) {
+    	Reserva reserva = new Reserva(categoriaInput, startDate, endDate, newCliente.getName(), selectedCar.getVehiculoId(), NombreSedeRecoger, NombreSedeDevolver, "vigente");
+        
+        Categoria categoria = categorias.get(categoriaInput);
+        double totalPrice = reserva.getPrecio(diasRenta, tarifa,  categoria.getvalorSedeDiferente());
+        System.out.println("\n===== Información del alquiler =====\n");
+        System.out.println("Cliente Name: " + newCliente.getName());
+        System.out.println("Vehiculo: " + selectedCar.getmarca() + " " + selectedCar.getmodelo());
+        System.out.println("Rental Days: " + diasRenta);
+        System.out.printf("Precio total: $%.2f%n", totalPrice);
+
+        totalPrice = seleccionarSeguros(scanner, reserva, totalPrice, diasRenta);
+        reserva.setPrecio(totalPrice);
+        
+        System.out.print("\n¿Confirma el alquiler? (Y/N): ");
+        String confirm = scanner.nextLine();
+        
+        if (confirm.equalsIgnoreCase("Y")) {
+        	addReserva(reserva);
+        	AgendaCarro agenda = selectedCar.reservar(startDate, endDate);
+        	addAgendasCarros(selectedCar.getVehiculoId(), agenda);
+        	escribirAgendasCarros(selectedCar.getVehiculoId(), agenda);
+            System.out.println("\nCarro alquilado exitosamente");
+            double treintaPct = reserva.get30ptcPrecio(totalPrice);
+            reserva.setPrecioAbonado(treintaPct);
+            escribirReserva(reserva);
+            System.out.print("Se te descontó el 30% del valor de la compra de tu tarjeta: $" + treintaPct);
+            
+        } else {
+            System.out.println("\nRenta cancelada");
+        }
+    }
     
     /**
      * Opción 2 para que un cliente modifique una reserva existente.
@@ -1270,7 +1290,7 @@ public class VehiculoRentalSystem {
      */
     public void opcion2Cliente(Scanner scanner, Cliente newCliente) {
 		for(Reserva reserva: reservas) {
-			if (reserva.getCliente().equals(newCliente.getName())) {
+			if (reserva.getCliente().equals(newCliente.getName())&& reserva.getEstado().equals("vigente")) {
 				System.out.println("===== Modificar reserva =====");
 	            System.out.println("1. Cambiar fecha en la que se devuelve el carro");
 	            System.out.println("2. Cambiar lugar de devuelta del carro");
@@ -1435,8 +1455,9 @@ public class VehiculoRentalSystem {
 	 */
 	public void opcion1Empleado(Scanner scanner) {
 		System.out.println("\n======= Retornar vehículo ======= \n");
-        System.out.print("Ingrese el ID (placa) del vehículo que desea regresar: ");
-        String carId = scanner.nextLine();
+        System.out.println("Ingrese el nombre del cliente que está retornando el vehículo: ");
+        System.out.println("(El cliente debe tener una reserva vigente para poder retornar el vehículo)");
+        String clienteNombre = scanner.nextLine();
         System.out.print("Ingrese la fecha de hoy (dd/MM/yyyy): ");
         String fechaHoyStr = scanner.nextLine();
         try {
@@ -1447,7 +1468,16 @@ public class VehiculoRentalSystem {
             LocalDate fechaSumada = localDate.plusDays(2);
             Date fechaFinal = Date.from(fechaSumada.atStartOfDay(ZoneId.systemDefault()).toInstant());
             
-           returnVehiculo(carId, fechaHoy, fechaFinal);
+            for(Reserva reserva: reservas) {
+            	if(reserva.getCliente().equals(clienteNombre) && reserva.getEstado().equals("vigente")) {
+            		String carId = reserva.getIdCarro();
+            		returnVehiculo(carId, fechaHoy, fechaFinal);
+            	}else {
+            		System.out.println("El cliente no tiene ninguna reserva vigente");
+            	}
+            }
+            
+           
            
         }catch(ParseException e) {
         	System.err.println("La fecha no está en formato (dd/MM/yyyy");
@@ -1461,12 +1491,17 @@ public class VehiculoRentalSystem {
 	 * @param scanner El objeto Scanner para la entrada de usuario.
 	 */
 	public void opcion2Empleado(Scanner scanner) {
-		System.out.println("El cliente ya debe estar registrado en el sistema, si no lo está pidale que se registre");
+		
 		System.out.println("Nombre del cliente: ");
 		String NombreCliente = scanner.nextLine();
-		Cliente cliente = clientes.get(NombreCliente);
-		
-		opcion1Cliente(scanner, cliente);
+		for(String clienteStr: clientes.keySet()) {
+			if(clienteStr.equals(NombreCliente)) {
+				Cliente cliente = clientes.get(NombreCliente);
+				opcion1Cliente(scanner, cliente);
+			}else {
+				System.out.println("El cliente no está registrado en el sistema, pidale que se registre");
+			}
+		}
 	}
 	
 	/**

@@ -18,6 +18,7 @@ public class Reserva {
 	private List<String> conductores;
 	private double precio;
 	private double precioAbonado;
+	private String estado;
 	
 	/**
      * Constructor de la clase Reserva.
@@ -30,7 +31,7 @@ public class Reserva {
      * @param IdSedeRecoger   El ID de la sede donde se recogerá el vehículo.
      * @param IdSedeDevolver  El ID de la sede donde se devolverá el vehículo.
      */
-	public Reserva(String Categoria, Date FechaEntrega, Date FechaRetorno, String Cliente, String IdCarro, String IdSedeRecoger, String IdSedeDevolver) {
+	public Reserva(String Categoria, Date FechaEntrega, Date FechaRetorno, String Cliente, String IdCarro, String IdSedeRecoger, String IdSedeDevolver, String estado) {
 		this.Categoria = Categoria;
 		this.FechaEntrega = FechaEntrega;
 		this.FechaRetorno = FechaRetorno;
@@ -42,6 +43,7 @@ public class Reserva {
 		this.IdSedeDevolver = IdSedeDevolver;
 		this.precio = 0;
 		this.precioAbonado = 0;
+		this.estado = estado;
 	}
 	
 	//Getters
@@ -52,6 +54,15 @@ public class Reserva {
      */
 	public String getCategoria() {
 		return this.Categoria;
+	}
+	
+	/**
+     * Obtiene el estado de la reserva.
+     *
+     * @return el estado del carro.
+     */
+	public String getEstado() {
+		return this.estado;
 	}
 	
     /**
@@ -211,6 +222,15 @@ public class Reserva {
      */
 	public void setPrecio(double precio) {
 		this.precio = precio;
+	}
+	
+	/**
+     * Establece el estado de la reserva.
+     *
+     * @param estado El estado de la reserva.
+     */
+	public void setEstado(String estado) {
+		this.estado = estado;
 	}
 	
 	/**
