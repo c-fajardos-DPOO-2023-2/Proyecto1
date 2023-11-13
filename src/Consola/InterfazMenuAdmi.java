@@ -169,6 +169,7 @@ public class InterfazMenuAdmi extends JFrame {
         final String ADMIN_PASSWORD = "admiG";
 
         // Autenticación del administrador
+        
         while (true) {
             String adminUsername = JOptionPane.showInputDialog("Ingrese el nombre de usuario del administrador:");
             String adminPassword = JOptionPane.showInputDialog("Ingrese la contraseña del administrador:");

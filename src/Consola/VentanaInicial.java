@@ -77,6 +77,12 @@ public class VentanaInicial extends JFrame{
             	interfazEmpleado.setVisible(true);
             }
          });
+        botonSalir.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	System.exit(0);
+            }
+         });
 	}
 	public static void main(String[] args) {
         VentanaInicial ventana = new VentanaInicial();

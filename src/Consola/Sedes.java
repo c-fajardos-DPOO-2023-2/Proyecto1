@@ -80,12 +80,18 @@ class Sedes extends JFrame implements ActionListener{
 		// Obtener la opción seleccionada de la lista desplegable
 		String sedeOpcion = (String) listaDesplegable.getSelectedItem();
 		System.out.print(sedeOpcion);
-		Sede sede = rentalSystem.getSedes().get(sedeOpcion);
+		
+		if(sedeOpcion.equals("Sede")) {
+			JOptionPane.showMessageDialog(null, "Elija una opción válida");
+		}else {
+			Sede sede = rentalSystem.getSedes().get(sedeOpcion);
 			
-		InterfazAdminLocal menuLocal= new InterfazAdminLocal(inventario, sede);
-        
-        menuLocal.setLocationRelativeTo( null );
-        menuLocal.setVisible(true);
+			InterfazAdminLocal menuLocal= new InterfazAdminLocal(inventario, sede);
+	        
+	        menuLocal.setLocationRelativeTo( null );
+	        menuLocal.setVisible(true);
+		}
+			
 	}
 
 }

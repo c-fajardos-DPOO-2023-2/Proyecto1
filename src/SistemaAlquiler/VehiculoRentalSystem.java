@@ -22,6 +22,8 @@ import javax.swing.JTextField;
 
 
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
@@ -1179,7 +1181,8 @@ public class VehiculoRentalSystem extends JFrame{
      * @param dias          El número de días de alquiler.
      * @return El nuevo precio total con los seguros seleccionados.
      */
-    public double seleccionarSeguros(Reserva reservaActual, double precio, int dias) {
+    public double seleccionarSeguros(Reserva actualReserva, double precio, int dias) {
+    	final Reserva reservaActual = actualReserva;
         double totalPrice = precio;
         JPanel myPanel = new JPanel();
         myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
@@ -1192,12 +1195,33 @@ public class VehiculoRentalSystem extends JFrame{
         for (int i = 0; i < segurosDisponibles.size(); i++) {
             seguros[i] = segurosDisponibles.get(i).getNombre();
         }
-        JComboBox<String> seguroComboBox = new JComboBox<>(seguros);
+        final JComboBox<String> seguroComboBox = new JComboBox<>(seguros);
         myPanel.add(new JLabel("Seleccione el seguro:"));
         myPanel.add(seguroComboBox);
+        seguroComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Otras acciones...
+            	String seguroOpcion = (String) seguroComboBox.getSelectedItem();
+            	for(Seguro seguro: segurosDisponibles ) {
+            		if(seguro.getNombre().equals(seguroOpcion)) {
+            			escribirSegurosReserva(reservaActual.getCliente(), seguroOpcion);
+            			addSegurosReserva(reservaActual.getCliente(), seguroOpcion);
+            			
+            			
+            		}
+            		
+            	}
+                
+                
+                JOptionPane.showMessageDialog(null, "Alquiler realizado exitosamente");
+                // Otras acciones...
+            }
+        });
 
         int result = JOptionPane.showConfirmDialog(null, myPanel,
                 "Seleccione el seguro", JOptionPane.OK_CANCEL_OPTION);
+        
 
         if (result == JOptionPane.OK_OPTION) {
             // Otras acciones...
@@ -1313,24 +1337,29 @@ public class VehiculoRentalSystem extends JFrame{
             ArrayList<AgendaCarro> agenda = carro.getAgendaVehiculo();
 
             for (AgendaCarro rango : agenda) {
-            	Calendar fechaInicio = Calendar.getInstance();
-            	fechaInicio.setTime(rango.getFechaInicio());
-            	
-            	Calendar fechaFin = Calendar.getInstance();
-            	fechaFin.setTime(rango.getFechaInicio());
-            	
-            	int mesInicio = fechaInicio.get(Calendar.MONTH) + 1;
-            	int mesFinal = fechaInicio.get(Calendar.MONTH) + 1;
-                
-                if(mesInicio == mesFinal) {
-                	disponibilidadMensual[mesInicio]++;
-                }else {
-                	disponibilidadMensual[mesInicio]++;
-                	disponibilidadMensual[mesFinal]++;
-                }
+            	if(rango.getEstadoCarro().equals("Reservado")) {
+	            	Calendar fechaInicio = Calendar.getInstance();
+	            	fechaInicio.setTime(rango.getFechaInicio());
+	            	
+	            	Calendar fechaFin = Calendar.getInstance();
+	            	fechaFin.setTime(rango.getFechaFinal());
+	            	
+	            	int mesInicio = fechaInicio.get(Calendar.MONTH) - 1;
+	            	int mesFinal = fechaInicio.get(Calendar.MONTH) - 1;
+	                
+	                if(mesInicio == mesFinal) {
+	                	disponibilidadMensual[mesInicio]++;
+	                }else {
+	                	disponibilidadMensual[mesInicio]++;
+	                	disponibilidadMensual[mesFinal]++;
+	                }
+            	}
             }
         }
-
+        for(int i:disponibilidadMensual) {
+        	System.out.print(i);
+        }
+        
         // Calcula la disponibilidad restando el total de carros que inicialmente están disponibles en el mes
         //al número de carros que estuvieron indisponibles en el mes
         //para saber cuantos carros disponibles hubieron en el mes

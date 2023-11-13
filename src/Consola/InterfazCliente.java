@@ -158,7 +158,7 @@ public class InterfazCliente extends JFrame{
     		myPanel.add(new JLabel("Ingrese la fecha final de renta (dd/MM/yyyy): "));
     		myPanel.add(fechaFinal);
     		JTextField horaFinal = new JTextField();
-    		myPanel.add(new JLabel("Ingrese la hora de inicio de renta (HH/mm): "));
+    		myPanel.add(new JLabel("Ingrese la hora de fin de renta (HH/mm): "));
     		myPanel.add(horaFinal);
     		String[] sedesOpciones = {"Sucursal Central", "Sucursal Norte", "Sucursal Sur"};
     		JComboBox<String> sedesRecoComboBox = new JComboBox<>(sedesOpciones);
@@ -239,8 +239,11 @@ public class InterfazCliente extends JFrame{
     	        }
     	        }
     	 
-    	 private void generarReserva(String categoriaInput, Date startDate, Date endDate, Cliente newCliente,
-    	            Vehiculo selectedCar, String NombreSedeRecoger, String NombreSedeDevolver, int diasRenta, int tarifa) {
+    	 private void generarReserva(String categoriaInput, Date inicioDate, Date finDate, Cliente newCliente,
+    	            Vehiculo selectedcarro, String NombreSedeRecoger, String NombreSedeDevolver, int diasRenta, int tarifa) {
+    		 	final Date startDate = inicioDate;
+    		 	final Date endDate = finDate;
+    		 	final Vehiculo selectedCar = selectedcarro;
     	        Reserva reserva = new Reserva(categoriaInput, startDate, endDate, newCliente.getName(),
     	                selectedCar.getVehiculoId(), NombreSedeRecoger, NombreSedeDevolver, "vigente");
     	        Categoria categoria = rentalSystem.getCategorias().get(categoriaInput);
@@ -280,6 +283,9 @@ public class InterfazCliente extends JFrame{
     	                reservaFinal.setPrecio(totalPrice[0]);
     	                rentalSystem.addReserva(reservaFinal);
     	                rentalSystem.escribirReserva(reservaFinal);
+    	                AgendaCarro indisponibilidad = new AgendaCarro(startDate, endDate, "Reservado");
+    	                rentalSystem.addAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
+    	                rentalSystem.escribirAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
     	                JOptionPane.showMessageDialog(null, "Alquiler realizado exitosamente");
     	                // Otras acciones...
     	            }
@@ -289,6 +295,7 @@ public class InterfazCliente extends JFrame{
     	            @Override
     	            public void actionPerformed(ActionEvent e) {
     	                JOptionPane.showMessageDialog(null, "Alquiler cancelado exitosamente");
+    	                System.exit(0);
     	            }
     	        });
     	    }

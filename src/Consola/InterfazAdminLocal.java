@@ -591,6 +591,8 @@ public class InterfazAdminLocal extends JFrame{
         	public void actionPerformed(ActionEvent e) {
     			rentalSystem.eliminarEmpleado(empleadoFinal);
     			rentalSystem.removeEmpleado(empleadoFinal);
+    			ventanaInfoEmpleado.dispose();
+        		ventanaAnterior.setVisible(true);
         	}
         });
 	    //eliminarEmpleado.setPreferredSize(dimension);
