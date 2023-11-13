@@ -3,6 +3,7 @@ package SistemaAlquiler;
 public class Empleado extends Usuario{
 	
 	private String sede;
+	private String nombre;
 	
 	 /**
      * Constructor de la clase Empleado.
@@ -11,9 +12,10 @@ public class Empleado extends Usuario{
      * @param login     El nombre de usuario del empleado.
      * @param contrasena La contraseña del empleado.
      */
-	public Empleado(String sede, String login, String contrasena) {
+	public Empleado(String sede, String login, String contrasena, String nombre) {
 		super(login, contrasena);
 		this.sede = sede;
+		this.nombre = nombre;
 	}
 	
     /**
@@ -34,5 +36,7 @@ public class Empleado extends Usuario{
 		this.sede = sede;
 	}
 	
-	
+	public String getNombre() {
+		return nombre;
+	}
 }

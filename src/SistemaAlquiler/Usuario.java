@@ -32,4 +32,13 @@ class Usuario {
     public String getContrasena() {
         return contrasena;
     }
-}
+    
+    public void setContrasena(String contraseña) {
+    	this.contrasena = contraseña;
+    }
+    
+    public void setLogin(String login) {
+    	this.login = login;
+    }
+    
+}	

@@ -102,7 +102,7 @@ public class Sede {
      * @param empleado El empleado que se va a agregar.
      */
     public void agregarEmpleado(Empleado empleado) {
-    	empleados.add(empleado.getLogin());
+    	empleados.add(empleado.getNombre());
     }
     
     /**

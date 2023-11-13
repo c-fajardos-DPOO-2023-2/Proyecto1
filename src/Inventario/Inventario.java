@@ -21,6 +21,23 @@ import SistemaAlquiler.Sede;
 import SistemaAlquiler.Seguro;
 
 public class Inventario {
+	VehiculoRentalSystem rentalSystem;
+	
+	public Inventario() {
+		this.rentalSystem = new VehiculoRentalSystem();
+		
+		CargarCategorias(rentalSystem);
+		CargarSedes(rentalSystem);
+		CargarSeguros(rentalSystem);
+		CargarClientes(rentalSystem);
+		CargarEmpleados(rentalSystem);
+		CargarConductores(rentalSystem);
+		CargarReservas(rentalSystem);
+		CargarCarros(rentalSystem);
+		CargarAgendasCarros(rentalSystem);
+		CargarSegurosReservas(rentalSystem);
+		CargarUsuarioContrasenas(rentalSystem);
+	}
 	
 	/**
 	 * Carga la información de sedes desde un archivo de texto y las agrega al sistema de alquiler de vehículos.<br>
@@ -126,7 +143,7 @@ public class Inventario {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] empleadoInfo = line.split(",");
-                Empleado empleado = new Empleado(empleadoInfo[0], empleadoInfo[1], empleadoInfo[2]);
+                Empleado empleado = new Empleado(empleadoInfo[0], empleadoInfo[1], empleadoInfo[2], empleadoInfo[3]);
                 rentalSystem.addEmpleado(empleado);
             	rentalSystem.CargaEmpleadosASede(empleado);
          
@@ -342,24 +359,9 @@ public class Inventario {
 	 * Aplicación principal que carga toda la información necesaria al sistema de alquiler y muestra el menú principal.
 	 * @throws IOException Si ocurre un error en cualquiera de las operaciones de carga de datos.
 	 */
-	public void aplicacion() {
-		VehiculoRentalSystem rentalSystem = new VehiculoRentalSystem();
-		
-		CargarCategorias(rentalSystem);
-		CargarSedes(rentalSystem);
-		CargarSeguros(rentalSystem);
-		CargarClientes(rentalSystem);
-		CargarEmpleados(rentalSystem);
-		CargarConductores(rentalSystem);
-		CargarReservas(rentalSystem);
-		CargarCarros(rentalSystem);
-		CargarAgendasCarros(rentalSystem);
-		CargarSegurosReservas(rentalSystem);
-		CargarUsuarioContrasenas(rentalSystem);
-		
-		
-		rentalSystem.mostrarMenu();
-		
+	
+	public VehiculoRentalSystem getAplicacion() {
+		return this.rentalSystem;
 	}
 }
 

@@ -10,13 +10,24 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Scanner;
+
+import javax.swing.BoxLayout;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+
+import java.awt.GridLayout;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.FileOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.lang.Math;
@@ -24,7 +35,9 @@ import java.lang.Math;
 
 
 
-public class VehiculoRentalSystem {
+
+public class VehiculoRentalSystem extends JFrame{
+	private static final long serialVersionUID = 1L;
 	private List<Vehiculo> cars;
     private List<Reserva> reservas;
     private HashMap<String, Categoria> categorias;
@@ -36,6 +49,8 @@ public class VehiculoRentalSystem {
     private List<Empleado> empleados;
     private Map<String, List<AgendaCarro>> agendasCarros;
     private Map<String, List<String>> segurosReserva;
+    private static VehiculoRentalSystem instance;
+    private List<Categoria>precioCategoria;
     
     /**
      * Constructor de la clase VehiculoRentalSystem. Inicializa las listas y mapas necesarios.
@@ -52,8 +67,47 @@ public class VehiculoRentalSystem {
         empleados = new ArrayList<>();
         agendasCarros = new HashMap<>();
         segurosReserva = new HashMap<>();
+        precioCategoria = new ArrayList<>();
     }
     
+    public List<Empleado> getEmpleados() {
+    	return empleados;
+    }
+    
+    public List<Vehiculo> getVehiculos() {
+    	return cars;
+    }
+    
+    public List<Seguro> getSeguros() {
+    	return segurosDisponibles;
+    }
+    
+    public List<Reserva> getReservas() {
+    	return reservas;
+    }
+    
+    public Map<String, Categoria> getCategorias() {
+    	return categorias;
+    }
+    
+    public Map<String, Sede> getSedes(){
+    	return sedes;
+    }
+    
+    public Map<String, Cliente> getClientes(){
+    	return clientes;
+    }
+    
+    public Map<String, String> getContraseñasUsuarios(){
+    	return usuariosYContraseñas;
+    }
+    
+    public static VehiculoRentalSystem getInstance() {
+        if (instance == null) {
+            instance = new VehiculoRentalSystem();
+        }
+        return instance;
+    }
     
     //Vehiculo
     /**
@@ -165,7 +219,8 @@ public class VehiculoRentalSystem {
     public void addCategorias(Categoria categoria) {
     	categorias.put(categoria.getNombre(), categoria);
     }
-
+    
+    
     //Seguro
     /**
      * Agrega un seguro al sistema.
@@ -196,6 +251,28 @@ public class VehiculoRentalSystem {
                 }
             }
     		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Seguros");
+    		    fileOut.write(input.getBytes());
+    		    fileOut.close();
+           
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+    
+    public void modificarPrecioCategoria(Categoria categoria, double nuevoPrecio) {
+    	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Categorias"))) {
+    		String line;
+    		String input = "";
+    		while ((line = reader.readLine()) != null) {
+                String[] seguroInfo = line.split(",");
+                if (categoria.getNombre().equals(seguroInfo[0])) {
+                	input += line.replaceAll(seguroInfo[1], String.valueOf(nuevoPrecio))+"\n";
+                }else {
+                    input += line+"\n";
+                }
+            }
+    		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Categorias");
     		    fileOut.write(input.getBytes());
     		    fileOut.close();
            
@@ -255,6 +332,66 @@ public class VehiculoRentalSystem {
         }
     }
     
+    public void modificarPreciosCategoria(String nombreCategoria, int nuevaTarifaTempAlta, int nuevaTarifaTempBaja, int nuevaTarifaConductor,int nuevoPrecioSede) {
+        List<Categoria> categorias = obtenerCategoriasDesdeArchivo();
+
+        // Buscar la categoría por nombre
+        for (Categoria categoria : categorias) {
+            if (categoria.getNombre().equals(nombreCategoria)) {
+                // Actualizar los precios
+                categoria.setTarifaTempAlta(nuevaTarifaTempAlta);
+                categoria.setTarifaTempBaja(nuevaTarifaTempBaja);
+                categoria.setValorAdicionalConductor(nuevaTarifaConductor);
+                categoria.setValorSedeDiferente(nuevoPrecioSede);
+
+                // Guardar los cambios en el archivo de texto
+                guardarCategoriasEnArchivo(categorias);
+                return;
+            }
+        }
+     // Si llegamos aquí, la categoría no se encontró
+        System.out.println("Categoría no encontrada.");
+    }
+    
+    private void guardarCategoriasEnArchivo(List<Categoria> categorias) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter("InventarioDatos/Categorias"))) {
+            for (Categoria categoria : categorias) {
+                writer.println(categoria.toStringParaArchivo());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Manejar la excepción según tus necesidades
+        }
+    }
+    
+    private List<Categoria> obtenerCategoriasDesdeArchivo() {
+        List<Categoria> categorias = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Categorias"))) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                String[] partes = linea.split(",");
+                if (partes.length == 5) {
+                    String nombre = partes[0];
+                    int tarifaTempAlta = Integer.parseInt(partes[1]);
+                    int tarifaTempBaja = Integer.parseInt(partes[2]);
+                    int valorAdicionalConductor = Integer.parseInt(partes[3]);
+                    int valorSedeDiferente = Integer.parseInt(partes[4]);
+
+                    Categoria categoria = new Categoria(nombre, tarifaTempAlta, tarifaTempBaja, valorAdicionalConductor, valorSedeDiferente);
+                    categorias.add(categoria);
+                } else {
+                    System.out.println("Formato incorrecto en línea: " + linea);
+                }
+            }
+        } catch (IOException | NumberFormatException e) {
+            e.printStackTrace();
+            // Manejar la excepción según tus necesidades
+        }
+
+        return categorias;
+    }
+
     /**
      * Modifica la dirección de una sede en el archivo de sedes.
      *
@@ -294,6 +431,10 @@ public class VehiculoRentalSystem {
     	empleados.add(empleado);
     }
     
+    public void removeEmpleado(Empleado empleado) {
+    	empleados.remove(empleado);
+    }
+    
     /**
      * Escribe la información de un empleado en el archivo de empleados.
      *
@@ -302,7 +443,7 @@ public class VehiculoRentalSystem {
      */
     public void escribirEmpleado(Empleado empleado) {
     	String rutaArchivo = "InventarioDatos/Empleados";
-        String contenido = "\n" + empleado.getSede() + "," + empleado.getLogin()+ "," + empleado.getContrasena();
+        String contenido = empleado.getSede() + "," + empleado.getLogin()+ "," + empleado.getContrasena() + "," + empleado.getNombre() +"\n";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido); 
@@ -311,7 +452,70 @@ public class VehiculoRentalSystem {
         }
     }
     
+    public void eliminarEmpleado(Empleado empleado) {
+    	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Empleados"))) {
+    		String line;
+    		String input = "";
+    		while ((line = reader.readLine()) != null) {
+                String[] empleadoInfo = line.split(",");
+                if (empleado.getNombre().equals(empleadoInfo[3])) {
+                }else {
+                	input += line+"\n";
+                }
+            }
+    		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Empleados");
+    		    fileOut.write(input.getBytes());
+    		    fileOut.close();
+           
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     
+    public void modificarLoginEmpleado(Empleado empleado, String login) {
+    	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Empleados"))) {
+    		String line;
+    		String input = "";
+    		while ((line = reader.readLine()) != null) {
+                String[] empleadoInfo = line.split(",");
+                if (empleado.getLogin().equals(empleadoInfo[1])) {
+                	input += line.replaceAll(empleadoInfo[1], login)+"\n";
+                }else {
+                    input += line+"\n";
+                }
+            }
+    		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Empleados");
+    		    fileOut.write(input.getBytes());
+    		    fileOut.close();
+           
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void modificarContraseñaEmpleado(Empleado empleado, String contraseña) {
+    	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Empleados"))) {
+    		String line;
+    		String input = "";
+    		while ((line = reader.readLine()) != null) {
+                String[] empleadoInfo = line.split(",");
+                if (empleado.getContrasena().equals(empleadoInfo[2])) {
+                	input += line.replaceAll(empleadoInfo[2], contraseña)+"\n";
+                }else {
+                    input += line+"\n";
+                }
+            }
+    		 FileOutputStream fileOut = new FileOutputStream("InventarioDatos/Empleados");
+    		    fileOut.write(input.getBytes());
+    		    fileOut.close();
+           
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     //usuarioYcontraseña
     /**
      * Agrega un par de usuario y contraseña al mapa de usuarios y contraseñas.
@@ -689,8 +893,10 @@ public class VehiculoRentalSystem {
             }
             System.out.println("Se encuentra en la sede: " + vehiculoConsultado.getUbicacion());
             System.out.println("Reservas:");
+            int cantReservas = 0;
             for(Reserva reserva: reservas) {
             	if (reserva.getIdCarro().equals(vehiculoID)) {
+            		cantReservas += 1;
             		System.out.println("Reservado desde: " + reserva.getFechaEntrega());
             		System.out.println("Reservado hasta: " + reserva.getFechaRetorno());
             		System.out.println("Reservado por: " + reserva.getCliente());
@@ -698,6 +904,9 @@ public class VehiculoRentalSystem {
             		System.out.println("-------------------------------------------------------");
             		
             	}
+            if(cantReservas == 0) {
+            	System.out.println("El vehículo no tiene historial de reservas");
+            }
             }
             
         } else {
@@ -714,50 +923,81 @@ public class VehiculoRentalSystem {
      * @param contrasena La contraseña del cliente.
      * @return El nuevo cliente registrado.
      */
-    public  Cliente RegistarCliente(Scanner scanner, String login, String contrasena) {
+    public  Cliente RegistarCliente(String login, String contrasena) {
     	Cliente newCliente = null;
+    	dispose();
     	
-    	System.out.print("Escirba su nombre completo: ");
-    	String clienteName = scanner.nextLine();
-    	System.out.print("Digite su telefono: ");
-    	String telefono = scanner.nextLine();
-    	System.out.print("Digite su correo: ");
-    	String correo = scanner.nextLine();
+		getContentPane().removeAll();
+		
+		setTitle("Registrarse ");
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
+		
+		JPanel myPanel = new JPanel(new GridLayout(3, 2));
+		
+		getContentPane().add(myPanel);
+        myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
+        JTextField clienteName = new JTextField();
+		myPanel.add(new JLabel("Ingrese su nombre completo"));
+		myPanel.add(clienteName);
+        JTextField clienteTelefono = new JTextField();
+    	myPanel.add(new JLabel("Digite su telefono: "));
+    	myPanel.add(clienteTelefono);
+    	JTextField clienteCorreo = new JTextField();
+     	myPanel.add(new JLabel("Digite su correo: "));
+     	myPanel.add(clienteCorreo);
     	
-    	System.out.print("Digite el numero de su licencia de conducción: ");
-    	String numeroLicencia = scanner.nextLine();
-    	System.out.print("Digite el país de expedición de su licencia de conducción: ");
-    	String PaisLicencia = scanner.nextLine();
-    	System.out.print("Digite la fecha de vencimiento de su licencia (dd/MM/yyyy): ");
-    	String VencimientoLicenciaStr = scanner.nextLine();
+     	JTextField clienteLicencia = new JTextField();
+     	myPanel.add(new JLabel("Digite el numero de su licencia de conducción: "));
+     	myPanel.add(clienteLicencia);
+     	JTextField clientePaisLicencia = new JTextField();
+     	myPanel.add(new JLabel("Digite el país de expedición de su licencia de conducción: "));
+     	myPanel.add(clientePaisLicencia);
+     	JTextField clienteVenciLicencia = new JTextField();
+     	myPanel.add(new JLabel("Digite la fecha de vencimiento de su licencia (dd/MM/yyyy): "));
+     	myPanel.add(clienteVenciLicencia);
+     	JTextField clienteNumTarjeta = new JTextField();
+      	myPanel.add(new JLabel("Digite el número de su tarjeta: "));
+      	myPanel.add(clienteNumTarjeta);
+      	JTextField clienteTipoTarjeta = new JTextField();
+      	myPanel.add(new JLabel("Digite el tipo de tarjeta que tiene (VISA, Mastercard, ...): "));
+      	myPanel.add(clienteTipoTarjeta);
+      	JTextField venciTarjeta = new JTextField();
+      	myPanel.add(new JLabel("Digite la fecha de vencimiento de su tarjeta (dd/MM/yyyy): "));
+      	myPanel.add(venciTarjeta);
+		int result = JOptionPane.showConfirmDialog(null, myPanel,
+				"llene los campos para el registro", JOptionPane.OK_CANCEL_OPTION);
+		if (result == JOptionPane.OK_OPTION) {
+
     	try {
     		SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            Date VencimientoLicencia = dateFormat.parse(VencimientoLicenciaStr);
+            Date VencimientoLicencia = dateFormat.parse(clienteVenciLicencia.getText());
             
-            Licencia licencia = new Licencia(numeroLicencia, PaisLicencia, VencimientoLicencia);
+            Licencia licencia = new Licencia(clienteLicencia.getText(), clientePaisLicencia.getText(), VencimientoLicencia);
             
-            System.out.print("Digite el número de su tarjeta: ");
-        	String numeroTarjeta = scanner.nextLine();
-        	System.out.print("Digite el tipo de tarjeta que tiene (VISA, Mastercard, ...): ");
-        	String tipoTarjeta = scanner.nextLine();
-        	System.out.print("Digite la fecha de vencimiento de su tarjeta (dd/MM/yyyy): ");
-        	String VencimientoTarjetaStr = scanner.nextLine();
-            Date VencimientoTarjeta = dateFormat.parse(VencimientoTarjetaStr);
+           
+            Date VencimientoTarjeta = dateFormat.parse(venciTarjeta.getText());
             
-            MedioPago medioPago = new MedioPago(numeroTarjeta, tipoTarjeta, VencimientoTarjeta);
+            MedioPago medioPago = new MedioPago(clienteNumTarjeta.getText(), clienteTipoTarjeta.getText(), VencimientoTarjeta);
         	
-        	newCliente = new Cliente(telefono, clienteName, correo, licencia, medioPago, login, contrasena);
-        	Conductor conductor = new Conductor(clienteName, telefono, correo, licencia);
+        	newCliente = new Cliente(clienteTelefono.getText(), clienteName.getText(), clienteCorreo.getText(), licencia, medioPago, login, contrasena);
+        	Conductor conductor = new Conductor(clienteName.getText(), clienteTelefono.getText(), clienteCorreo.getText(), licencia);
         	
         	addConductor(conductor);
         	escribirConductor(conductor);
         	addCliente(newCliente);
         	escribirCliente(newCliente);
+        	addUsuarioYContraseña(login, contrasena);
+        	escribirUsuarioContrasena(login,contrasena);
+    		JOptionPane.showMessageDialog(null, "cliente registrado con exito");
+
         	
     	} catch (ParseException e){
-    		System.err.println("La fecha no está en formato (dd/MM/yyyy");
+    		JOptionPane.showMessageDialog(null, "La fecha no está en formato (dd/MM/yyyy)");
     	}
-    	return newCliente;
+    	setVisible(true);
+    }
+		return newCliente;
     }
     
     /**
@@ -766,37 +1006,68 @@ public class VehiculoRentalSystem {
      * @param scanner El escáner para la entrada del conductor.
      * @return El nuevo conductor registrado.
      */
-    public  Conductor RegistrarConductor(Scanner scanner) {
+    
+    public  Conductor RegistrarConductor() {
     	Conductor nuevoConductor = null;
     	
-    	System.out.print("Nombre conductor: ");
-    	String conductorName = scanner.nextLine();
-    	System.out.print("Telefono conductor: ");
-    	String telefono = scanner.nextLine();
-    	System.out.print("Correo conductor: ");
-    	String correo = scanner.nextLine();
+    	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(500, 300);
+        setLocationRelativeTo(null);
+
+        JLabel nombreLabel = new JLabel("Ingrese el nombre conductor:");    
+        JTextField nombreTextField = new JTextField();
+        JLabel telefonoLabel = new JLabel("Ingrese el telefono del conductor:");
+        JTextField telefonoTextField = new JTextField();
+        JLabel correoLabel = new JLabel("Ingrese el correo del conductor:");    
+        JTextField correoTextField = new JTextField();
+        JLabel num_licenciaLabel = new JLabel("Ingrese el numero licencia de conducción:");
+        JTextField num_licenciaTextField = new JTextField();
+        JLabel paisLabel = new JLabel("Ingrese el país de expedición de licencia de conducción:");    
+        JTextField paisTextField = new JTextField();
+        JLabel fechaLabel = new JLabel("Ingrese la fecha de vencimiento de licencia (dd/MM/yyyy):");
+        JTextField fechaTextField = new JTextField();
+        
+        JPanel panel = new JPanel(new GridLayout(6, 2));
+        panel.add(nombreLabel);
+        panel.add(nombreTextField);
+        panel.add(telefonoLabel);
+        panel.add(telefonoTextField);
+        panel.add(correoLabel);
+        panel.add(correoTextField);
+        panel.add(num_licenciaLabel);
+        panel.add(num_licenciaTextField);
+        panel.add(paisLabel);
+        panel.add(paisTextField);
+        panel.add(fechaLabel);
+        panel.add(fechaTextField);
+        
     	
-    	System.out.print("numero licencia de conducción: ");
-    	String numeroLicencia = scanner.nextLine();
-    	System.out.print("país de expedición de licencia de conducción: ");
-    	String PaisLicencia = scanner.nextLine();
-    	System.out.print("fecha de vencimiento de licencia: ");
-    	String VencimientoLicenciaStr = scanner.nextLine();
-    	try {
-    		SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-            Date VencimientoLicencia = dateFormat.parse(VencimientoLicenciaStr);
-            
-            Licencia licencia = new Licencia(numeroLicencia, PaisLicencia, VencimientoLicencia);
-            
-            nuevoConductor = new Conductor(conductorName, telefono, correo, licencia);
-            addConductor(nuevoConductor);
-            escribirConductor(nuevoConductor);
-            
-    	} catch(ParseException e) {
-    		System.err.println("La fecha no está en formato (dd/MM/yyyy");
-    	}
-    	return nuevoConductor;
+    	String conductorName = nombreTextField.getText();
+    	String telefono = telefonoTextField.getText();
+    	String correo = correoTextField.getText();
+    	String numeroLicencia = num_licenciaTextField.getText();
+    	String PaisLicencia = paisTextField.getText();
+    	String VencimientoLicenciaStr = fechaTextField.getText();
     	
+    	int result = JOptionPane.showConfirmDialog(null, panel,
+                "Registrar Conductor", JOptionPane.OK_CANCEL_OPTION);
+        
+        if (result == JOptionPane.OK_OPTION) {
+        	try {
+        		SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        		Date VencimientoLicencia = dateFormat.parse(VencimientoLicenciaStr);
+            
+        		Licencia licencia = new Licencia(numeroLicencia, PaisLicencia, VencimientoLicencia);
+            
+        		nuevoConductor = new Conductor(conductorName, telefono, correo, licencia);
+        		addConductor(nuevoConductor);
+        		escribirConductor(nuevoConductor);
+        		JOptionPane.showMessageDialog(null, "Se añadio el conductor exitosamente");
+            } catch(ParseException e) {
+    		JOptionPane.showMessageDialog(null, "La fecha no está en formato (dd/MM/yyyy)", "Formato Incorrecto", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+		return nuevoConductor;
     }
     
     /**
@@ -908,45 +1179,38 @@ public class VehiculoRentalSystem {
      * @param dias          El número de días de alquiler.
      * @return El nuevo precio total con los seguros seleccionados.
      */
-    public  double seleccionarSeguros(Scanner scanner, Reserva reservaActual, double precio, int dias) {
-    	boolean continuar = true;
-    	double totalPrice = precio;
-    	System.out.print("¿Desea agregar seguros? (Y/N): ");
-        String agregarSegurosStr = scanner.nextLine();
-        
-        if (agregarSegurosStr.equalsIgnoreCase("Y")) {
-	    	while (continuar) {
-	            System.out.println("Seleccione un seguro:");
-	
-	            for (int i = 0; i < segurosDisponibles.size(); i++) {
-	                System.out.println((i + 1) + ". " + segurosDisponibles.get(i).getNombre());
-	            }
-	            System.out.print("Ingrese el número del seguro o 0 para finalizar: ");
-	            int seguroChoice = scanner.nextInt();
-	            scanner.nextLine(); // Consume newline
-	
-	            if (seguroChoice == 0) {
-	                continuar = false;
-	            } else if (seguroChoice >= 1 && seguroChoice <= segurosDisponibles.size()) {
-	                Seguro selectedSeguro = segurosDisponibles.get(seguroChoice - 1);
-	
-	                // Agregar el seguro a la instancia de Rental actual
-	                reservaActual.AgregarSeguro(selectedSeguro);
-	                addSegurosReserva(reservaActual.getCliente(), selectedSeguro.getNombre());
-	                escribirSegurosReserva(reservaActual.getCliente(), selectedSeguro.getNombre());
-	                System.out.println("Seguro '" + selectedSeguro.getNombre() + "' agregado.");
-	            } else {
-	                System.out.println("Opción no válida.");
-	            }
-	        }
-	    	// Actualizar el precio total con el costo de los seguros seleccionados
-	        totalPrice = reservaActual.getPrecioConSeguros(precio, dias);
-	        
-	        System.out.printf("Nuevo precio total con seguros: $%.2f%n", totalPrice);
+    public double seleccionarSeguros(Reserva reservaActual, double precio, int dias) {
+        double totalPrice = precio;
+        JPanel myPanel = new JPanel();
+        myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
 
+        setTitle("Seleccion de Seguros");
+        setSize(300, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        String[] seguros = new String[segurosDisponibles.size()];
+        for (int i = 0; i < segurosDisponibles.size(); i++) {
+            seguros[i] = segurosDisponibles.get(i).getNombre();
         }
+        JComboBox<String> seguroComboBox = new JComboBox<>(seguros);
+        myPanel.add(new JLabel("Seleccione el seguro:"));
+        myPanel.add(seguroComboBox);
+
+        int result = JOptionPane.showConfirmDialog(null, myPanel,
+                "Seleccione el seguro", JOptionPane.OK_CANCEL_OPTION);
+
+        if (result == JOptionPane.OK_OPTION) {
+            // Otras acciones...
+        }
+
+        // Actualizar el precio total con el costo de los seguros seleccionados
+        totalPrice = reservaActual.getPrecioConSeguros(precio, dias);
+        JOptionPane.showMessageDialog(null, "Nuevo precio total con seguros: " + totalPrice);
+        
+        // No llamamos a setVisible(true) aquí para que no se muestre la ventana de selección de seguros antes de tiempo
+        
         return totalPrice;
-     }
+    }
     
     /**
      * Permite al cliente agregar conductores adicionales a su reserva.
@@ -954,31 +1218,76 @@ public class VehiculoRentalSystem {
      * @param scanner        El escáner para la entrada del cliente.
      * @param reservaEvaluada La reserva en la que se agregarán conductores adicionales.
      */
-    public  void AgregarConductoresReserva(Scanner scanner, Reserva reservaEvaluada) {
+    public  void AgregarConductoresReserva(Reserva reservaEvaluada) {
     	boolean continuar = true;
     	while(continuar) {
-    		System.out.println("¿Desea agregar más conductores a su renta? (Y/N): ");
-        	String AgregarConductores = scanner.nextLine();
-        	if (AgregarConductores.equalsIgnoreCase("Y")) {
-        		System.out.println("¿El conductor ya está registrado? (Y/N): ");
-        		String registrar = scanner.nextLine();
+    		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setSize(400, 300);
+            setLocationRelativeTo(null);
+
+            JLabel pregunta1Label = new JLabel("¿Desea agregar más conductores a su renta? (Y/N):");    
+            JTextField respuesta1TextField = new JTextField();
+            JPanel panel1 = new JPanel(new GridLayout(2, 1));
+            panel1.add(pregunta1Label);
+            panel1.add(respuesta1TextField);
+        	
+        	int result1 = JOptionPane.showConfirmDialog(null, panel1,
+                    "Agregar Conductores", JOptionPane.OK_CANCEL_OPTION);
+            
+            if (result1 == JOptionPane.OK_OPTION) {
+            	String AgregarConductores = respuesta1TextField.getText();
+            	if (AgregarConductores.equalsIgnoreCase("Y")) {
+            		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            		setLocationRelativeTo(null);
+            		JLabel pregunta2Label = new JLabel("¿El conductor ya está registrado? (Y/N):");    
+            		JTextField respuesta2TextField = new JTextField();
+            		JPanel panel2 = new JPanel(new GridLayout(2, 1));
+            		panel2.add(pregunta2Label);
+            		panel2.add(respuesta2TextField);
+            	
+            		int result2 = JOptionPane.showConfirmDialog(null, panel2,
+                            "Agregar Conductores", JOptionPane.OK_CANCEL_OPTION);
+                    
+                    if (result2 == JOptionPane.OK_OPTION) {
+        		String registrar = respuesta2TextField.getText();
+        		
         		if (registrar.equalsIgnoreCase("Y")) {
-        			System.out.println("Escriba el correo del conductor: ");
-            		String correoConductor = scanner.nextLine();
+        			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    setLocationRelativeTo(null);
+                    JLabel pregunta3Label = new JLabel("Escriba el correo del conductor:");    
+                    JTextField respuesta3TextField = new JTextField();
+                    JPanel panel3 = new JPanel(new GridLayout(2, 1));
+                    panel3.add(pregunta3Label);
+                    panel3.add(respuesta3TextField);
+                    
+                    int result3 = JOptionPane.showConfirmDialog(null, panel3,
+                            "Agregar Conductores", JOptionPane.OK_CANCEL_OPTION);
+                    
+                    if (result3 == JOptionPane.OK_OPTION) {
+            		String correoConductor = respuesta3TextField.getText();
             		for(Conductor conductor: conductores) {
             	   		if (conductor.getCorreo().equals(correoConductor)) {
             	    		reservaEvaluada.AgregarConductor(conductor);
+            	    		JOptionPane.showMessageDialog(null, "El conductor fue agregado exitosamente");
+            	    		continuar = false;
+            	    		break;
             	    	}
-            	    }
+            		}
+                    }
+                    
+                    
         		}else {
-        			Conductor nuevoConductor = RegistrarConductor(scanner);
+        			Conductor nuevoConductor = RegistrarConductor();
         			reservaEvaluada.AgregarConductor(nuevoConductor);
         		}
-        	}else {
+            	}
+            }else {
         		continuar = false;
         	}
+        	}
     	}
-    }
+    	}
+    
     
     /**
      * Permite saber cuantos días dura una reserva creada por el cliente.
@@ -995,6 +1304,46 @@ public class VehiculoRentalSystem {
         }
         return diasRenta;
     }
+    
+    public int[] calcularDisponibilidadMensual(Sede sede) {
+    	
+        int[] disponibilidadMensual = new int[12];
+        
+        for (Vehiculo carro : sede.getVehiculos()) {
+            ArrayList<AgendaCarro> agenda = carro.getAgendaVehiculo();
+
+            for (AgendaCarro rango : agenda) {
+            	Calendar fechaInicio = Calendar.getInstance();
+            	fechaInicio.setTime(rango.getFechaInicio());
+            	
+            	Calendar fechaFin = Calendar.getInstance();
+            	fechaFin.setTime(rango.getFechaInicio());
+            	
+            	int mesInicio = fechaInicio.get(Calendar.MONTH) + 1;
+            	int mesFinal = fechaInicio.get(Calendar.MONTH) + 1;
+                
+                if(mesInicio == mesFinal) {
+                	disponibilidadMensual[mesInicio]++;
+                }else {
+                	disponibilidadMensual[mesInicio]++;
+                	disponibilidadMensual[mesFinal]++;
+                }
+            }
+        }
+
+        // Calcula la disponibilidad restando el total de carros que inicialmente están disponibles en el mes
+        //al número de carros que estuvieron indisponibles en el mes
+        //para saber cuantos carros disponibles hubieron en el mes
+        for (int i = 0; i < disponibilidadMensual.length; i++) {
+        	
+            disponibilidadMensual[i] = (30* sede.getVehiculos().size())- disponibilidadMensual[i];
+        }
+
+        return disponibilidadMensual;
+    }
+
+
+
     
     /**
      * Carga un empleado a todas las sedes disponibles.
@@ -1060,56 +1409,11 @@ public class VehiculoRentalSystem {
     /**
      * Muestra el menú principal del sistema y maneja las interacciones iniciales.
      */
-    public void mostrarMenu() {
-		Scanner scanner = new Scanner(System.in);
-		boolean continuar = true;
-		while (continuar) {
-			System.out.println("===== Menú de Inicio =====");
-	        System.out.println("1. Soy Cliente");
-	        System.out.println("2. Soy Administrador");
-	        System.out.println("3. Soy Empleado");
-	        System.out.println("4. Salir");
-	        System.out.print("Ingrese una opción numérica: ");
+   
+	
+	
 
-	        int choice = scanner.nextInt();
-	        scanner.nextLine(); // Consume newline
-	        Cliente newCliente = null;
-	        
-	        if(choice == 1) {
-	        	System.out.println("1. Iniciar sesión ");
-	            System.out.println("2. Registrarse" );
-	            System.out.println("Ingrese una opción numérica: ");
-	            int choice1 = scanner.nextInt();
-	            scanner.nextLine();
-	            
-	            if (choice1 == 1) {
-	            	newCliente = validacionCliente(scanner);
-	            	mostrarMenuCliente(scanner, newCliente);
-	            } else if (choice1 == 2) {
-	            	System.out.print("Ingrese su nombre de usuario: ");
-	                String clienteUsername = scanner.nextLine();
-	                System.out.print("Ingrese su contraseña: ");
-	                String clientePassword = scanner.nextLine();
-	                
-	                addUsuarioYContraseña(clienteUsername, clientePassword);
-	                escribirUsuarioContrasena(clienteUsername, clientePassword);
-	                newCliente = RegistarCliente(scanner, clienteUsername, clientePassword);
-	                System.out.println("Registro exitoso.");
-	                mostrarMenuCliente(scanner, newCliente);
-	            }else {
-	            	System.out.print("Ingrese una opción válida");
-	            }
-	        }else if (choice == 2){
-	        	menuAdministrador();
-	        }else if (choice == 3) {
-	        	validacionEmpleado(scanner);
-	        }else if(choice == 4) {
-	        	continuar = false;
-	        }else {
-	        	System.out.print("Ingrese una opción válida");
-	        }
-		}
-	}
+    
     
     //CLIENTE//
     /**
@@ -1118,32 +1422,7 @@ public class VehiculoRentalSystem {
      * @param scanner    El escáner para la entrada del cliente.
      * @param newCliente El cliente que ha iniciado sesión o se ha registrado.
      */
-    public void mostrarMenuCliente(Scanner scanner, Cliente newCliente) {
-		boolean continuar = true;
-		
-		while (continuar) {
-            System.out.println("\n===== Vehiculo Rental System =====\n");
-            System.out.println("1. Alquilar un vehículo");
-            System.out.println("2. Modificar información entrega en reserva");
-            System.out.println("3. Salir");
-            System.out.print("Ingrese una opción numérica: ");
-            int choice = scanner.nextInt();
-            scanner.nextLine();
-            
-            if (choice == 1) {
-            	opcion1Cliente(scanner, newCliente);
-            }
-            else if (choice == 2){
-            	opcion2Cliente(scanner, newCliente);
-            }
-            else if (choice == 3) {
-            	continuar = false;
-            }
-            else {
-            	System.out.print("Ingrese una opción válida: ");
-            }
-		}
-	}
+	
     
     /**
      * Opción 1 para que un cliente alquile un vehículo.
@@ -1153,132 +1432,7 @@ public class VehiculoRentalSystem {
      * @param newCliente  Objeto Cliente representando al cliente actual.
      * @throws ParseException si hay un error en el formato de la fecha.
      */
-    public void opcion1Cliente(Scanner scanner, Cliente newCliente) {
-        
-        System.out.print("\n==== Alquilar un vehículo ====\n");
-        System.out.print("Ingrese la categoría que desea alquilar (SUV, pequeño, van, lujoso): ");
-        String categoriaInput = scanner.nextLine();
-
-            
-        System.out.print("Ingrese la fecha de inicio de renta (dd/MM/yyyy): ");
-        String startDateStr = scanner.nextLine();
-        System.out.print("Ingrese la hora de inicio de renta (HH/mm): ");
-        String startHourStr = scanner.nextLine();
-        System.out.print("Ingrese la fecha final de renta (dd/MM/yyyy): ");
-        String endDateStr = scanner.nextLine();
-        System.out.print("Ingrese la hora de inicio de renta (HH/mm): ");
-        String endHourStr = scanner.nextLine();
-        System.out.println("Ingrese el nombre de la sede en la que va a recoger el carro");
-        System.out.println("1. Sucursal Central");
-        System.out.println("2. Sucursal Norte");
-        System.out.println("3. Sucursal Sur");
-        System.out.println("Ingrese el nombre como aparece en las opciones: ");
-        String NombreSedeRecoger = scanner.nextLine();
-        System.out.println("Ingrese el nombre de la sede en la que va a devolver el carro");
-        System.out.println("1. Sucursal Central");
-        System.out.println("2. Sucursal Norte");
-        System.out.println("3. Sucursal Sur");
-        System.out.println("Ingrese el nombre como aparece en las opciones: ");
-        
-        String NombreSedeDevolver = scanner.nextLine();
-        
-        
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
-            Date startDate = dateFormat.parse(startDateStr + "/" + startHourStr);
-            Date endDate = dateFormat.parse(endDateStr + "/" + endHourStr);
-            
-            List<Vehiculo> availableCarsIncategoria = new ArrayList<>();
-            for (Sede sede : sedes.values()) {
-    			if (sede.getNombre().equals(NombreSedeRecoger)){
-    				for (Vehiculo car : sede.getVehiculos()) {
-    					String categoria = car.getCategoria();
-    					if (car.ValidarDisponibilidad(startDate, endDate) && categoria.equals(categoriaInput)) {
-    	            		availableCarsIncategoria.add(car);
-    	                }
-    	                
-    	            }
-    			}
-    		}
-
-            if (!availableCarsIncategoria.isEmpty()) {
-                // Seleccionar un carro aleatorio de la categoría
-                Random random = new Random();
-                Vehiculo selectedCar = availableCarsIncategoria.get(random.nextInt(availableCarsIncategoria.size()));
-                
-                // Calcular la diferencia de días entre las fechas
-                int diasRenta = cantidadDiasRenta(startDate, endDate);
-
-                // Determinar si estamos en temporada alta (por ejemplo, de julio a diciembre)
-                int tarifa = DeterminarTarifa(startDate, categoriaInput);
-                
-
-                // Resto del código para alquilar el coche
-                // Utiliza el método calculatePrice con diasRenta y temporadaAlta
-                // para calcular el precio y mostrarlo al usuario.
-                boolean reservaVigente = false;
-                if(reservas.size() != 0) {
-                	for(Reserva res: reservas) {
-                    	if(res.getCliente().equals(newCliente.getName())&& res.getEstado().equals("vigente")) {
-                    		reservaVigente = true;
-                    	}
-                	}
-                    if(!reservaVigente) {
-                    	generarReserva(categoriaInput, startDate, endDate, newCliente, selectedCar, 
-                				NombreSedeRecoger, NombreSedeDevolver, diasRenta, tarifa, scanner);
-                    }else {
-                    	System.out.println("Ya tiene una reserva vigente, no puede generar otra reserva");
-                    }
-                }else {
-                	generarReserva(categoriaInput, startDate, endDate, newCliente, selectedCar, 
-            				NombreSedeRecoger, NombreSedeDevolver, diasRenta, tarifa, scanner);
-                }
-                
-                
-                
-                
-            } else {
-                System.out.println("\nNo hay carros disponibles en la categoría seleccionada, disculpas.");
-            }
-            
-            } catch (ParseException e) {
-                System.out.println("Invalid date format");
-            }
-        }
-    
-    private void generarReserva(String categoriaInput, Date startDate, Date endDate, Cliente newCliente, 
-    		Vehiculo selectedCar, String NombreSedeRecoger, String NombreSedeDevolver, int diasRenta, int tarifa, Scanner scanner) {
-    	Reserva reserva = new Reserva(categoriaInput, startDate, endDate, newCliente.getName(), selectedCar.getVehiculoId(), NombreSedeRecoger, NombreSedeDevolver, "vigente");
-        
-        Categoria categoria = categorias.get(categoriaInput);
-        double totalPrice = reserva.getPrecio(diasRenta, tarifa,  categoria.getvalorSedeDiferente());
-        System.out.println("\n===== Información del alquiler =====\n");
-        System.out.println("Cliente Name: " + newCliente.getName());
-        System.out.println("Vehiculo: " + selectedCar.getmarca() + " " + selectedCar.getmodelo());
-        System.out.println("Rental Days: " + diasRenta);
-        System.out.printf("Precio total: $%.2f%n", totalPrice);
-
-        totalPrice = seleccionarSeguros(scanner, reserva, totalPrice, diasRenta);
-        reserva.setPrecio(totalPrice);
-        
-        System.out.print("\n¿Confirma el alquiler? (Y/N): ");
-        String confirm = scanner.nextLine();
-        
-        if (confirm.equalsIgnoreCase("Y")) {
-        	addReserva(reserva);
-        	AgendaCarro agenda = selectedCar.reservar(startDate, endDate);
-        	addAgendasCarros(selectedCar.getVehiculoId(), agenda);
-        	escribirAgendasCarros(selectedCar.getVehiculoId(), agenda);
-            System.out.println("\nCarro alquilado exitosamente");
-            double treintaPct = reserva.get30ptcPrecio(totalPrice);
-            reserva.setPrecioAbonado(treintaPct);
-            escribirReserva(reserva);
-            System.out.print("Se te descontó el 30% del valor de la compra de tu tarjeta: $" + treintaPct);
-            
-        } else {
-            System.out.println("\nRenta cancelada");
-        }
-    }
+	 
     
     /**
      * Opción 2 para que un cliente modifique una reserva existente.
@@ -1288,120 +1442,7 @@ public class VehiculoRentalSystem {
      * @param newCliente  Objeto Cliente representando al cliente actual.
      * @throws ParseException si hay un error en el formato de la fecha.
      */
-    public void opcion2Cliente(Scanner scanner, Cliente newCliente) {
-		for(Reserva reserva: reservas) {
-			if (reserva.getCliente().equals(newCliente.getName())&& reserva.getEstado().equals("vigente")) {
-				System.out.println("===== Modificar reserva =====");
-	            System.out.println("1. Cambiar fecha en la que se devuelve el carro");
-	            System.out.println("2. Cambiar lugar de devuelta del carro");
-	            System.out.print("Ingrese una opción numérica: ");
-	            int choice = scanner.nextInt();
-	            scanner.nextLine();
-	            
-	            
-	            if(choice == 1){
-	            	System.out.println("Escribe la nueva fecha (dd/MM/yyyy/HH/mm): ");
-	            	String fechaDevolverStr = scanner.nextLine();
-	            	try {
-	                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
-	                    Date fechaDevolver = dateFormat.parse(fechaDevolverStr);
-	                    for(Vehiculo carro : cars) {
-	                    	if(carro.getVehiculoId().equals(reserva.getIdCarro())) {
-	                    		for(AgendaCarro agenda : carro.getAgendaVehiculo()) {
-	                    			if(reserva.getFechaRetorno().equals(agenda.getFechaFinal())) {
-	                    				modificarAgendasCarros(agenda, fechaDevolver, "Final");
-	                    				agenda.setFechaFinal(fechaDevolver);
-	                    			}
-	                    		}
-	                    	}
-	                    }
-	                    
-	                    modificarFechaReserva(reserva, fechaDevolver, "retorno");
-	                    reserva.setFechaRetorno(fechaDevolver);
-	                    double precio = reserva.getPrecio(cantidadDiasRenta(reserva.getFechaEntrega(), reserva.getFechaRetorno()), DeterminarTarifa(reserva.getFechaEntrega(),  reserva.getCategoria()), categorias.get(reserva.getCategoria()).getvalorSedeDiferente());
-	                    double precioTotal = reserva.getPrecioConSeguros(precio, cantidadDiasRenta(reserva.getFechaEntrega(), reserva.getFechaRetorno()));
-	                    reserva.setPrecio(precioTotal);
-	                    modificarPrecioReserva(reserva, precioTotal, reserva.getCliente());
-	                    
-	            	}catch(ParseException e) {
-	            		System.out.println("Invalid date format. Please use dd/MM/yyyy.");
-	            	}	
-	           
-	                
-	            } else if (choice == 2) {
-	            	System.out.println("Escriba el nuevo nombre de la sede donde se va a devolver el carro");
-	            	String NombreSede = scanner.nextLine();
-	            	
-	            	modificarSedeReserva(reserva, NombreSede, "devuelta", reserva.getCliente());
-	                reserva.setIdSedeDevolver(NombreSede);
-	                double precio = reserva.getPrecio(cantidadDiasRenta(reserva.getFechaEntrega(), reserva.getFechaRetorno()), DeterminarTarifa(reserva.getFechaEntrega(),  reserva.getCategoria()), categorias.get(reserva.getCategoria()).getvalorSedeDiferente());
-                    double precioTotal = reserva.getPrecioConSeguros(precio, cantidadDiasRenta(reserva.getFechaEntrega(), reserva.getFechaRetorno()));
-                    modificarPrecioReserva(reserva, precioTotal, reserva.getCliente());
-                    reserva.setPrecio(precioTotal);
-	                
-	            } else {
-	            	System.out.println("Elige una opción válida");
-	            	
-	            }
-			}
-		}
-	}
-	
-    /**
-     * Validación y autenticación del cliente.
-     *<b>Pre:</b> Scanner no debe ser nulo.
-     *<b>Post:</b> Se devuelve un objeto Cliente si la autenticación es exitosa, o null en caso contrario.
-     * @param scanner Objeto Scanner para la entrada del usuario.
-     * @return Objeto Cliente si se autentica correctamente, o null si falla la autenticación.
-     */
-    public  Cliente validacionCliente(Scanner scanner) {
-		// Menú para el cliente
-		Cliente newCliente = null;
-        String clienteUsername;
-        String clientePassword;
-        boolean clienteAutenticado = false;
-        
-        while (!clienteAutenticado) {
-            System.out.print("Ingrese su nombre de usuario: ");
-            clienteUsername = scanner.nextLine();
-            System.out.print("Ingrese su contraseña: ");
-            clientePassword = scanner.nextLine();
-            
-            // Verificar si el usuario ya existe en el mapa
-            if (usuariosYContraseñas.containsKey(clienteUsername)) {
-                // Verificar si la contraseña coincide
-                if (usuariosYContraseñas.get(clienteUsername).equals(clientePassword)) {
-                	for (Cliente cliente : clientes.values()) {
-                		if (cliente.getLogin().equals(clienteUsername)) {
-                			newCliente = cliente;
-                		}
-                	}
-                    clienteAutenticado = true;
-                } else {
-                    System.out.println("Contraseña incorrecta. Inténtelo de nuevo.");
-                }
-            } else {
-                // El usuario no existe en el mapa, permitir registro
-                System.out.println("El usuario no existe. Desea registrarse (Y/N): ");
-                String registrar = scanner.nextLine();
-                if (registrar.equalsIgnoreCase("Y")) {
-                	
-                	System.out.print("nombre de usuario: ");
-                    clienteUsername = scanner.nextLine();
-                    System.out.print("contraseña: ");
-                    clientePassword = scanner.nextLine();
-                    newCliente = RegistarCliente(scanner, clienteUsername, clientePassword);
-                    addUsuarioYContraseña(clienteUsername, clientePassword);
-                    System.out.print(clienteUsername + clientePassword);
-                    escribirUsuarioContrasena(clienteUsername, clientePassword);
-                    
-                    System.out.println("Registro exitoso.");
-                    clienteAutenticado = true;
-                }
-            }
-        }
-        return newCliente;
-	}
+	 
 	
 	//EMPLEADO//
     /**
@@ -1497,7 +1538,7 @@ public class VehiculoRentalSystem {
 		for(String clienteStr: clientes.keySet()) {
 			if(clienteStr.equals(NombreCliente)) {
 				Cliente cliente = clientes.get(NombreCliente);
-				opcion1Cliente(scanner, cliente);
+				//opcion1Cliente(cliente);
 			}else {
 				System.out.println("El cliente no está registrado en el sistema, pidale que se registre");
 			}
@@ -1520,7 +1561,7 @@ public class VehiculoRentalSystem {
         for(Reserva reserva: reservas) {
         	if(reserva.getCliente().equals(NombreCliente)) {
         		reservaEvaluada = reserva;
-        		AgregarConductoresReserva(scanner, reservaEvaluada);
+        		AgregarConductoresReserva(reservaEvaluada);
         		
 	            Categoria categoria = categorias.get(reservaEvaluada.getCategoria());
 	            
@@ -1614,44 +1655,7 @@ public class VehiculoRentalSystem {
      * Muestra el menú principal de los administradores para que puedan especificar sin son el 
 	 * administrador local de alguna sede o el general.
      */
-	public void menuAdministrador() {
-		Scanner scanner = new Scanner(System.in);
-		Boolean continuar = true;
-		while(continuar) {
-			System.out.println("========= Menú Administrador =========");
-		    System.out.println("1. Administrador General");
-		    System.out.println("2. Administrador local");
-		    System.out.println("3. Salir al menu principal");
-		    System.out.print("Ingrese una opción numérica: ");
-			
-		    int choice = scanner.nextInt();
-		    scanner.nextLine(); // Consume newline
-		    
-		    if(choice == 1){
-		    	validacionAdminGeneral(scanner);
-		    }else if(choice == 2) {
-		    	System.out.println("========= Elija una sede =========");
-			    System.out.println("1. Sucursal Central");
-			    System.out.println("2. Sucursal Norte");
-			    System.out.println("2. Sucursal Sur");
-			    System.out.print("Ingrese una opción numérica: ");
-			    int sedeOpcion = scanner.nextInt();
-			    scanner.nextLine();
-			    
-			    if(sedeOpcion == 1) {
-			    	validacionAdminLocal(scanner, "Central");
-			    }else if(sedeOpcion == 2) {
-			    	validacionAdminLocal(scanner, "Norte");
-			    }else if(sedeOpcion == 3) {
-			    	validacionAdminLocal(scanner, "Sur");
-			    }
-		    }else if(choice == 3) {
-		    	continuar = false;
-		    }else {
-		    	System.out.print("Elija una opción válida");
-		    }
-		}
-	}
+	
 	
 	//Administrador Local
 	/**
@@ -1664,31 +1668,7 @@ public class VehiculoRentalSystem {
 	 * @param scanner El objeto Scanner para la entrada de usuario.
 	 * @param sede    La sede en la que el administrador local está trabajando.
 	 */
-	public void menuAdminLocal(Scanner scanner, String sede) {
-		
-		Boolean continuar = true;
-		
-		while(continuar) {
-			System.out.println("========= Menú Administrador =========");
-		    System.out.println("1. Modificar info sede");
-		    System.out.println("2. Agregar Empleado");
-		    System.out.println("3. Salir al menu");
-		    System.out.print("Ingrese una opción numérica: ");
-		    
-		    int choice = scanner.nextInt();
-		    scanner.nextLine(); // Consume newline
-		    
-		    if (choice == 1) {
-		    	opcion1AdminLocal(scanner, sede);
-		    }else if(choice == 2) {
-		    	opcion2AdminLocal(scanner, sede);
-		    }else if(choice == 3) {
-		    	continuar = false;
-		    }else {
-		    	System.out.print("Ingrese una opción válida");
-		    }
-		}
-	}
+	
 	
 	/**
 	 * Permite al administrador local modificar la información de una sede,
@@ -1747,7 +1727,8 @@ public class VehiculoRentalSystem {
 		String empleadoUsername = scanner.nextLine();
 		System.out.print("Ingrese la contraseña del nuevo empleado: ");
 		String empleadoPassword = scanner.nextLine();
-		Empleado nuevoEmpleado = new Empleado(sucursal, empleadoUsername, empleadoPassword);
+		String nombre = "JOSE";
+		Empleado nuevoEmpleado = new Empleado(sucursal, empleadoUsername, empleadoPassword, nombre);
 		sede.agregarEmpleado(nuevoEmpleado);
 		empleados.add(nuevoEmpleado);
 		escribirEmpleado(nuevoEmpleado);
@@ -1761,228 +1742,10 @@ public class VehiculoRentalSystem {
 	 * @param sede    El nombre de la sede en la que se encuentra el administrador local.
 	 * @throws IllegalArgumentException Si la sede no coincide con "Central", "Norte" o "Sur".
 	 */
-	public void validacionAdminLocal(Scanner scanner, String sede) {
-		
-		String ADMIN_USERNAME = "";
-		String ADMIN_PASSWORD = "";
-		
-		if (sede == "Central") {
-			ADMIN_USERNAME = "admin_central";
-	        ADMIN_PASSWORD = "admin_central";
-		}else if(sede == "Norte") {
-			ADMIN_USERNAME = "admin_norte";
-	        ADMIN_PASSWORD = "admin_norte";
-		}else {
-			ADMIN_USERNAME = "admin_sur";
-	        ADMIN_PASSWORD = "admin_sur";
-		}
-		
-        
-        boolean acceso = true;
-		// Autenticación del administrador
-        while(acceso) {
-	        System.out.print("Ingrese el nombre de usuario del administrador: ");
-	        String adminUsername = scanner.nextLine();
-	        System.out.print("Ingrese la contraseña del administrador: ");
-	        String adminPassword = scanner.nextLine();
 	
-	        if (adminUsername.equals(ADMIN_USERNAME) && adminPassword.equals(ADMIN_PASSWORD)) {
-	            // Si las credenciales son correctas, mostrar el menú del administrador
-	            menuAdminLocal(scanner, sede);
-	            acceso = false;
-	        }else {
-	            System.out.println("Nombre de usuario o contraseña incorrectos. Acceso denegado.");
-	        }
-        }
-   }
 
-	//Administrador general
-	/**
-	 * Muestra el menú del Administrador General y permite al administrador realizar
-	 * diversas operaciones, como agregar y eliminar carros, consultar información de vehículos,
-	 * configurar seguros, ver la lista completa de carros, o volver al menú principal.
-	 * usuario y contraseña: admiG
-	 * 
-	 * @param scanner El objeto Scanner para la entrada de usuario.
-	 */
-	public void menuAdminGeneral(Scanner scanner) {
-		Boolean continuar = true;
-		while (continuar) {
-		    System.out.println("========= Menú Administrador =========");
-		    System.out.println("1. Agregar carro");
-		    System.out.println("2. Eliminar carro");
-		    System.out.println("3.Consultar información vehículo");
-		    System.out.println("4. Ver lista completa de carros");
-		    System.out.println("5. Configurar seguros");
-		    System.out.println("6. Salir al menú principal");
-		    System.out.print("Ingrese una opción numérica: ");
-		
-		    int choice = scanner.nextInt();
-		    scanner.nextLine(); // Consume newline
-		
-		    
-		    if (choice == 1) {
-		        opcion1AdminGeneral(scanner);
-		        
-		    } else if (choice == 2) {
-		    	opcion2AdminGeneral(scanner);
-		    
-		    }else if (choice == 3) {
-		        System.out.print("Ingrese el ID (placa) del vehículo que desea consultar: ");
-		        String vehiculoID = scanner.nextLine();
-		        consultarVehiculo(vehiculoID);
-		    } else if (choice == 4) {
-		         // Ver lista completa de carros
-		         System.out.println("Lista completa de carros:");
-		         for (Vehiculo vehiculo : cars) {
-		        	 System.out.println(vehiculo.getVehiculoId() + ": " + vehiculo.getmarca() + " " + vehiculo.getmodelo());
-		            }
-		        
-		    } else if (choice == 5) {
-		    	System.out.println("Cual seguro desea modificar:");
-		    	System.out.println("1. Seguro Bajo");
-		    	System.out.println("2. Seguro Medio");
-		    	System.out.println("3. Seguro Alto");
-		    	System.out.print("Ingrese una opción numérica: ");
-				
-			    int opcionSeguro = scanner.nextInt();
-			    scanner.nextLine(); // Consume newline
-			    
-			    if(opcionSeguro == 1) {
-			    	opcion5AdminGeneral(scanner, "Seguro Bajo");
-			    }else if (opcionSeguro == 2) {
-			    	opcion5AdminGeneral(scanner, "Seguro Medio");
-			    }else if(opcionSeguro == 3) {
-			    	opcion5AdminGeneral(scanner, "Seguro Alto");
-			    }else {
-			    	System.out.println("Opción no válida. Ingrese otra opción.");
-			    }
-			    
-		    }else if(choice == 6) {
-		    	continuar = false;
-		    	
-		    } else {
-		        System.out.println("Opción no válida. Ingrese otra opción.");
-		    }
-		}
-		}
 	
-	/**
-	 * Permite al administrador general agregar un nuevo carro al sistema.
-	 *
-	 * @param scanner El objeto Scanner para la entrada de usuario.
-	 */
-	public void opcion1AdminGeneral(Scanner scanner) {
-		// Agregar carro
-        System.out.print("Ingrese la placa del carro: ");
-        String vehiculoID = scanner.nextLine();
-        System.out.print("Ingrese la marca: ");
-        String marca = scanner.nextLine();
-        System.out.print("Ingrese el modelo: ");
-        String modelo = scanner.nextLine();
-        
-        System.out.print("Ingrese la categoría (SUV, pequeño, lujoso, van): ");
-        String categoria = scanner.nextLine();
-        
-        System.out.print("Ingrese la capacidad que tiene el vehículo: ");
-        int capacidad = scanner.nextInt();
 
-        // Consumir la nueva línea pendiente
-        scanner.nextLine();
 
-        System.out.print("Ingrese el color del vehículo: ");
-        String color = scanner.nextLine();
-        System.out.print("Ingrese la transmisión: ");
-        String transmision = scanner.nextLine();
-        
-        System.out.println("Ingrese el nombre de la sede del vehículo: ");
-        System.out.println("1. Sucursal Central: ");
-        System.out.println("2. Sucursal Norte: ");
-        System.out.println("3. Sucursal Sur: ");
-        System.out.println("Escriba la sede tal cual aparece en las opciones: ");
-        String sedeInput = scanner.nextLine();
-        Sede sede = sedes.get(sedeInput);
-        String ubicacion = sede.getNombre();
-     
-        Vehiculo newCar = new Vehiculo(vehiculoID, marca, modelo, categoria, color,transmision, capacidad, ubicacion);
-        addVehiculo(newCar);
-        escribirVehiculo(newCar);
-        System.out.println("Carro agregado con éxito a la sede "+ sede.getNombre());
-	}
-	
-	/**
-	 * Permite al administrador general eliminar un carro del sistema.
-	 *
-	 * @param scanner El objeto Scanner para la entrada de usuario.
-	 */
-	public void opcion2AdminGeneral(Scanner scanner) {
-		// Eliminar carro
-        System.out.print("Ingrese el ID (Placa) del carro que desea eliminar: ");
-        String carId = scanner.nextLine();
-
-        Vehiculo carToDelete = null;
-        for (Vehiculo car : cars) {
-            if (car.getVehiculoId().equals(carId)) {
-                carToDelete = car;
-                break;
-            }
-        }
-
-        if (carToDelete != null) {
-            removeVehiculo(carToDelete);
-            eliminarVehiculo(carToDelete);
-            sedes.get(carToDelete.getUbicacion()).eliminarVehiculo(carToDelete);
-            System.out.println("Carro eliminado con éxito.");
-        } else {
-            System.out.println("ID inválido o carro no encontrado.");
-        }
-	}
-	
-	/**
-	 * Permite al administrador general configurar el precio de un seguro específico.
-	 *
-	 * @param scanner El objeto Scanner para la entrada de usuario.
-	 * @param seguro  El nombre del seguro que se desea configurar.
-	 */
-	public void opcion5AdminGeneral(Scanner scanner, String seguro) {
-		System.out.println("Escriba el nuevo precio del seguro: ");
-    	int nuevoPrecio = scanner.nextInt();
-    	
-    	for(Seguro seg : segurosDisponibles) {
-    		if(seg.getNombre().equals(seguro)) {
-    			seg.SetCostoPorDia(nuevoPrecio);
-    			modificarSeguro(seg, nuevoPrecio);
-    		}
-    	}
-	}
-	
-	/**
-	 * Realiza la validación y autenticación del administrador general.
-	 *
-	 * @param scanner El objeto Scanner para la entrada de usuario.
-	 */
-	public  void validacionAdminGeneral(Scanner scanner) {
-		final String ADMIN_USERNAME = "admiG";
-        final String ADMIN_PASSWORD = "admiG";
-		
-        boolean acceso = true;
-		// Autenticación del administrador
-        while(acceso) {
-	        System.out.print("Ingrese el nombre de usuario del administrador: ");
-	        String adminUsername = scanner.nextLine();
-	        System.out.print("Ingrese la contraseña del administrador: ");
-	        String adminPassword = scanner.nextLine();
-	
-	        if (adminUsername.equals(ADMIN_USERNAME) && adminPassword.equals(ADMIN_PASSWORD)) {
-	            // Si las credenciales son correctas, mostrar el menú del administrador
-	            menuAdminGeneral(scanner);
-	            acceso = false;
-	        } else {
-	            System.out.println("Nombre de usuario o contraseña incorrectos. Acceso denegado.");
-	        }
-        }
-	}
-	
-	
 
 }
