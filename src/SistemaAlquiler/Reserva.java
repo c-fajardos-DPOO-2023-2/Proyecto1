@@ -281,7 +281,7 @@ public class Reserva {
 		for(Seguro seg: seguros) {
 			double costoSeguro = seg.getCostoPorDia()* primaSeguros;
 			costoSeguro += seg.getCostoPorDia();
-			precio += costoSeguro;
+			precio += (costoSeguro*diasRenta);
 		}
 		return precio;
 	}
