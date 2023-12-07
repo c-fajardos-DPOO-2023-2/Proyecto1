@@ -82,10 +82,10 @@ public class Inventario {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] carInfo = line.split(",");
-                if (carInfo.length == 8) {
+                if (carInfo.length == 10) {
                     // Asegúrate de que haya suficientes elementos en la línea
                     
-                	Vehiculo car = new Vehiculo(carInfo[0], carInfo[1], carInfo[2], carInfo[3], carInfo[4], carInfo[5], Integer.parseInt(carInfo[6]), carInfo[7]);
+                	Vehiculo car = new Vehiculo(carInfo[0], carInfo[1], carInfo[2], carInfo[3], carInfo[4], carInfo[5], Integer.parseInt(carInfo[6]), carInfo[7], carInfo[8], Double.parseDouble(carInfo[9]));
                     rentalSystem.addVehiculo(car);
                     rentalSystem.CargaCarrosASede(car);
                 } else {

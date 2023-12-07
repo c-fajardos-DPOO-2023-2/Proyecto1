@@ -48,7 +48,7 @@ public class InterfazMenuAdmi extends JFrame {
  	        JButton verificarInfoVehiculoButton = new JButton("Verificar Información de Vehículo");
  	        JButton configurarSegurosButton = new JButton("Configurar Seguros");
  	        JButton configurarPreciosButton = new JButton("Configurar Precios");
- 		    JButton salirButton = new JButton("Salir al Menú Principal");
+ 		    JButton salirButton = new JButton("Salir");
  		    menuPanel.add(agregarCarroButton);
  	        menuPanel.add(eliminarCarroButton);
  	        menuPanel.add(verificarInfoVehiculoButton);
@@ -222,6 +222,8 @@ public class InterfazMenuAdmi extends JFrame {
         JTextField transmisionField = new JTextField();
         String[] sedes = {"Sucursal Central", "Sucursal Norte", "Sucursal Sur"};
         JComboBox<String> sedeComboBox = new JComboBox<>(sedes);
+        JTextField tipoField = new JTextField();
+        JTextField primaSeguroField = new JTextField();
 
         JPanel myPanel = new JPanel(new GridLayout(8, 2));
         myPanel.add(new JLabel("Placa del carro:"));
@@ -240,6 +242,11 @@ public class InterfazMenuAdmi extends JFrame {
         myPanel.add(transmisionField);
         myPanel.add(new JLabel("Sede:"));
         myPanel.add(sedeComboBox);
+        myPanel.add(new JLabel("Tipo:"));
+        myPanel.add(tipoField);
+        myPanel.add(new JLabel("Prima seguros:"));
+        myPanel.add(primaSeguroField);
+        
 
         int result = JOptionPane.showConfirmDialog(null, myPanel,
                 "Ingrese los datos del nuevo carro", JOptionPane.OK_CANCEL_OPTION);
@@ -253,8 +260,10 @@ public class InterfazMenuAdmi extends JFrame {
             String color = colorField.getText();
             String transmision = transmisionField.getText();
             String sede = (String) sedeComboBox.getSelectedItem();
+            String tipo = tipoField.getText();
+            Double primaSeguros = Double.parseDouble(primaSeguroField.getText());
 
-            Vehiculo newCar = new Vehiculo(vehiculoID, marca, modelo, categoria, color, transmision, capacidad, sede);
+            Vehiculo newCar = new Vehiculo(vehiculoID, marca, modelo, categoria, color, transmision, capacidad, sede, tipo, primaSeguros);
             rentalSystem.addVehiculo(newCar);
             rentalSystem.escribirVehiculo(newCar);
             JOptionPane.showMessageDialog(null, "Carro agregado con éxito a la sede " + sede);

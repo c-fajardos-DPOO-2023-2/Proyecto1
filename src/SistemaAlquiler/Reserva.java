@@ -146,10 +146,11 @@ public class Reserva {
 	public void EliminarSeguro(Seguro seguro) {
 		int pos = 0;
 		for(Seguro seg: seguros) {
-			pos += 1;
 			if(seg == seguro) {
 				seguros.remove(pos);
 			}
+			pos += 1;
+
 		}
 	}
 	
@@ -276,9 +277,11 @@ public class Reserva {
      * @return El precio total de la reserva con seguros adicionales.
      */
 	//Esta incluye los seguros
-	public double getPrecioConSeguros(double precio, int diasRenta) {
+	public double getPrecioConSeguros(double precio, int diasRenta, double primaSeguros) {
 		for(Seguro seg: seguros) {
-			precio += seg.getCostoPorDia()* diasRenta;
+			double costoSeguro = seg.getCostoPorDia()* primaSeguros;
+			costoSeguro += seg.getCostoPorDia();
+			precio += costoSeguro;
 		}
 		return precio;
 	}
@@ -318,5 +321,9 @@ public class Reserva {
    */
 	public void setIdSedeDevolver(String IdSedeDevolver) {
 		this.IdSedeDevolver = IdSedeDevolver;
+	}
+	
+	public List<String> getConductores() {
+		return this.conductores;
 	}
 }

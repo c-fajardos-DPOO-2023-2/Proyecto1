@@ -209,6 +209,7 @@ public class InterfazCliente extends JFrame{
     	                if(rentalSystem.getReservas().size() != 0) {
     	                	for(Reserva res: rentalSystem.getReservas()) {
     	                    	if(res.getCliente().equals(newCliente.getName())&& res.getEstado().equals("vigente")) {
+    	                    		
     	                    		reservaVigente = true;
     	                    	}
     	                	}
@@ -280,12 +281,12 @@ public class InterfazCliente extends JFrame{
     	            public void actionPerformed(ActionEvent e) {
     	                // Otras acciones...
     	                totalPrice[0] = rentalSystem.seleccionarSeguros(reservaFinal, totalPrice[0], diasRentaFinal);
-    	                reservaFinal.setPrecio(totalPrice[0]);
     	                rentalSystem.addReserva(reservaFinal);
     	                rentalSystem.escribirReserva(reservaFinal);
     	                AgendaCarro indisponibilidad = new AgendaCarro(startDate, endDate, "Reservado");
     	                rentalSystem.addAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
     	                rentalSystem.escribirAgendasCarros(selectedCar.getVehiculoId(), indisponibilidad);
+    	                JOptionPane.showMessageDialog(null, "Se le descontó de su tarjeta $" + reservaFinal.getPrecioAbonado());
     	                JOptionPane.showMessageDialog(null, "Alquiler realizado exitosamente");
     	                // Otras acciones...
     	            }
@@ -348,13 +349,14 @@ public class InterfazCliente extends JFrame{
     			            	
     			            	 int result = JOptionPane.showConfirmDialog(null, myPanel,
     				                        "Modifique la Sede", JOptionPane.OK_CANCEL_OPTION);
-
+    			            	 double primaSeguros = 0;
     				                if (result == JOptionPane.OK_OPTION) {
     				                	try {
     					                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
     					                    Date fechaDevolver = dateFormat.parse(fechaDevolverStr.getText());
     					                    for(Vehiculo carro : rentalSystem.getVehiculos()) {
     					                    	if(carro.getVehiculoId().equals(reservaFinal.getIdCarro())) {
+    					                    		primaSeguros = carro.getPrimaSeguro();
     					                    		for(AgendaCarro agenda : carro.getAgendaVehiculo()) {
     					                    			if(reservaFinal.getFechaRetorno().equals(agenda.getFechaFinal())) {
     					                    				rentalSystem.modificarAgendasCarros(agenda, fechaDevolver, "Final");
@@ -366,7 +368,7 @@ public class InterfazCliente extends JFrame{
     					                    	}
     					                    }
     					                    double precio = reservaFinal.getPrecio(rentalSystem.cantidadDiasRenta(reservaFinal.getFechaEntrega(), reservaFinal.getFechaRetorno()), rentalSystem.DeterminarTarifa(reservaFinal.getFechaEntrega(),  reservaFinal.getCategoria()), rentalSystem.getCategorias().get(reservaFinal.getCategoria()).getvalorSedeDiferente());
-    					                    double precioTotal = reservaFinal.getPrecioConSeguros(precio, rentalSystem.cantidadDiasRenta(reservaFinal.getFechaEntrega(), reservaFinal.getFechaRetorno()));
+    					                    double precioTotal = reservaFinal.getPrecioConSeguros(precio, rentalSystem.cantidadDiasRenta(reservaFinal.getFechaEntrega(), reservaFinal.getFechaRetorno()), primaSeguros);
     					                    reservaFinal.setPrecio(precioTotal);
     					                    rentalSystem.modificarPrecioReserva(reservaFinal, precioTotal, reservaFinal.getCliente());
     					                    JOptionPane.showMessageDialog(null, "Fecha actualizada con éxito");
@@ -400,12 +402,19 @@ public class InterfazCliente extends JFrame{
     			                
     			                int result = JOptionPane.showConfirmDialog(null, myPanel,
     			                        "Modifique la Sede", JOptionPane.OK_CANCEL_OPTION);
+    			                
+    			                double primaSeguros = 0;
+    			                for(Vehiculo carro : rentalSystem.getVehiculos()) {
+			                    	if(carro.getVehiculoId().equals(reservaFinal.getIdCarro())) {
+			                    		primaSeguros = carro.getPrimaSeguro();
+			                    	}
+    			                }
 
     			                if (result == JOptionPane.OK_OPTION) {
     			                	rentalSystem.modificarSedeReserva(reservaFinal, (String) sedesComboBox.getSelectedItem(), "devuelta", reservaFinal.getCliente());
     			                	reservaFinal.setIdSedeDevolver((String) sedesComboBox.getSelectedItem());
     				                double precio = reservaFinal.getPrecio(rentalSystem.cantidadDiasRenta(reservaFinal.getFechaEntrega(), reservaFinal.getFechaRetorno()), rentalSystem.DeterminarTarifa(reservaFinal.getFechaEntrega(),  reservaFinal.getCategoria()), rentalSystem.getCategorias().get(reservaFinal.getCategoria()).getvalorSedeDiferente());
-    			                    double precioTotal = reservaFinal.getPrecioConSeguros(precio, rentalSystem.cantidadDiasRenta(reservaFinal.getFechaEntrega(), reservaFinal.getFechaRetorno()));
+    			                    double precioTotal = reservaFinal.getPrecioConSeguros(precio, rentalSystem.cantidadDiasRenta(reservaFinal.getFechaEntrega(), reservaFinal.getFechaRetorno()), primaSeguros);
     			                    rentalSystem.modificarPrecioReserva(reservaFinal, precioTotal, reservaFinal.getCliente());
     			                    reservaFinal.setPrecio(precioTotal);
     			                    JOptionPane.showMessageDialog(null, "Sede actualizada con éxito");

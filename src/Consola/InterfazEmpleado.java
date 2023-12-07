@@ -1,35 +1,55 @@
 package Consola;
+import java.awt.Desktop;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Date;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.imageio.ImageIO;
+
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+
+
+
+
 
 import Inventario.Inventario;
-import SistemaAlquiler.AgendaCarro;
 import SistemaAlquiler.Categoria;
 import SistemaAlquiler.Cliente;
+import SistemaAlquiler.Empleado;
+import SistemaAlquiler.IPasarelaDePago;
+import SistemaAlquiler.PasarelaPagoPayPal;
+import SistemaAlquiler.PasarelaPagoPayU;
+import SistemaAlquiler.PasarelaPagoSire;
 import SistemaAlquiler.Reserva;
-import SistemaAlquiler.Sede;
 import SistemaAlquiler.Vehiculo;
-import SistemaAlquiler.*;
+import SistemaAlquiler.VehiculoRentalSystem;
+
+
 
 public class InterfazEmpleado extends JFrame {
+	
+	
 	Inventario inventario;
 	VehiculoRentalSystem rentalSystem;
 	//InterfazCliente interfazCliente;
@@ -54,7 +74,7 @@ public class InterfazEmpleado extends JFrame {
 			JButton generarReservaButton = new JButton("Generar reserva");
 			JButton entregarCarroButton = new JButton("Entregar carro");
 			JButton reportarMantenimientoButton = new JButton("Reportar carro que necesita mantenimiento");
-			JButton salirButton = new JButton("Volver al menu principal");
+			JButton salirButton = new JButton("Salir");
 			JLabel texto = new JLabel("¿Qué desea hacer?");
 			texto.setHorizontalAlignment(JLabel.CENTER);
 
@@ -185,6 +205,8 @@ public class InterfazEmpleado extends JFrame {
         setSize(500, 300);
         setLocationRelativeTo(null);
         
+        String pasarela = elegirPasarela();
+        
         JLabel nombreLabel = new JLabel("Ingrese el nombre del cliente para buscar su reserva:");    
         JTextField nombreTextField = new JTextField();
         JPanel panel = new JPanel(new GridLayout(2, 1));
@@ -199,7 +221,7 @@ public class InterfazEmpleado extends JFrame {
         	Reserva reservaEvaluada = null;
         	for(Reserva reserva: rentalSystem.getReservas()) {
         		String nombreCliente = nombreTextField.getText();
-        		if(reserva.getCliente().equals(nombreCliente)) {
+        		if(reserva.getCliente().equals(nombreCliente)&& reserva.getEstado().equals("vigente")) {
         			reservaEvaluada = reserva;
         			rentalSystem.AgregarConductoresReserva(reservaEvaluada);
         		
@@ -210,8 +232,13 @@ public class InterfazEmpleado extends JFrame {
         			double PrecioConductores = reservaEvaluada.getPrecioConductores(PrecioBase, categoria.getvalorAdicionalConductor());
         			double PrecioTodo = PrecioConductores - PrecioAbonado;
         			error = false;
-        			JOptionPane.showMessageDialog(null, "El total que se le descontará de la tarjeta es de: " + PrecioTodo + ". A partir de este momento la tarjeta del cliente queda bloqueda", "La entrega del vehículo fue exitosa", JOptionPane.INFORMATION_MESSAGE);
-	            
+        			
+        			if(pasarela != null) {
+        				realizarPago(pasarela,PrecioTodo);
+        				JOptionPane.showMessageDialog(null, "El total que se le descontará de la tarjeta es de: " + PrecioTodo);
+        				generarPDF(reservaEvaluada, PrecioTodo);
+        			}
+        			
         			for(Vehiculo car : rentalSystem.getVehiculos()) {
         				if(car.getVehiculoId().equals(reservaEvaluada.getIdCarro())) {
         					car.setUbicacion("Alquilado");
@@ -262,6 +289,7 @@ public class InterfazEmpleado extends JFrame {
             	Date fechaFinal = Date.from(fechaSumada.atStartOfDay(ZoneId.systemDefault()).toInstant());
             
             	rentalSystem.carroEnMantenimiento(carId, fechaHoy, fechaFinal);
+            	
         	}catch(ParseException e) {
         		JOptionPane.showMessageDialog(null, "La fecha no está en formato (dd/MM/yyyy)", "Formato Incorrecto", JOptionPane.ERROR_MESSAGE);
         	}
@@ -293,6 +321,231 @@ public class InterfazEmpleado extends JFrame {
 		return validacion;
 	}
     
+    public String elegirPasarela() {
+        Object[] opciones = {"PayU", "PayPal", "PagoSire"};
+        int seleccion = JOptionPane.showOptionDialog(
+                null,
+                "Seleccione la pasarela de banco:",
+                "Selección de Pasarela",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opciones,
+                opciones[0]
+        );
+
+        if (seleccion == -1) {
+ 
+            return null;
+        }
+
+        return opciones[seleccion].toString();
+    }
     
+    public void realizarPago(String pasarela, double monto) {
+       
+        String numeroTarjeta = JOptionPane.showInputDialog("Ingrese el número de tarjeta:");
+
+
+        if (numeroTarjeta == null || numeroTarjeta.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Número de tarjeta inválido",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+      
+     // Solicitar el nombre del titular de la tarjeta
+        String nombreTitular = JOptionPane.showInputDialog("Ingrese el nombre del titular de la tarjeta:");
+
+
+        if (nombreTitular == null || nombreTitular.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Nombre del titular inválido",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+
+        try {
+         
+            if (monto <= 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Monto inválido. Ingrese un número positivo.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+   
+        String fechaVencimientoStr = JOptionPane.showInputDialog("Ingrese la fecha de vencimiento de la tarjeta (MM/yyyy):");
+
+
+        if (fechaVencimientoStr == null || fechaVencimientoStr.isEmpty() || !fechaVencimientoStr.matches("\\d{2}/\\d{4}")) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Formato de fecha de vencimiento inválido. Utilice el formato MM/yyyy.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+    
+        Date fechaVencimiento;
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("MM/yyyy");
+            fechaVencimiento = dateFormat.parse(fechaVencimientoStr);
+        } catch (ParseException e) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al procesar la fecha de vencimiento.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        IPasarelaDePago pasarelaDePago = null;
+
+        switch (pasarela) {
+            case "PayPal":
+                pasarelaDePago = new PasarelaPagoPayPal();
+                break;
+            case "PayU":
+                pasarelaDePago = new PasarelaPagoPayU();
+                break;
+            case "PagoSire":
+                pasarelaDePago = new PasarelaPagoSire();
+                break;
+            default:
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Error: Pasarela de pago no válida",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+        }
+
+        // Llamada a procesarPago y bloquearCupo con el número de tarjeta ingresado
+        boolean pagoExitoso = pasarelaDePago.procesarPago(numeroTarjeta, nombreTitular, monto, fechaVencimiento);
+
+        if (pagoExitoso) {
+            boolean cupoBloqueado = pasarelaDePago.bloquearCupo(numeroTarjeta, monto);
+
+            if (cupoBloqueado) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Pago realizado con éxito a través de la pasarela " + pasarela + ". La tarjeta ha sido bloqueada.",
+                        "Pago Exitoso",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Error al bloquear el cupo de la tarjeta",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al procesar el pago",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    private void generarPDF(Reserva reserva, double precioTotal) {
+
+        PDDocument document = new PDDocument();
+        PDPage page = new PDPage();
+        document.addPage(page);
+
+        try {
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+  
+            contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 14);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 700);
+            contentStream.showText("-------FACTURA VEHICULO RENTAL SYSTEM-----");
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Información de la Reserva:");
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Cliente: " + reserva.getCliente());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Vehículo: " + reserva.getIdCarro());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Precio Total: " + precioTotal);
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- Fecha de retorno: " + reserva.getFechaRetorno());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- ID sede donde devolver vehículo: " + reserva.getIdSedeDevolver());
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("- ID sede donde recoger vehículo: " + reserva.getIdSedeRecoger());
+            contentStream.newLineAtOffset(0, -20);
+         
+            contentStream.endText();
+
+    
+            File imageFile = new File("Entrega3/firmaAdmi.png");  
+            PDImageXObject image = LosslessFactory.createFromImage(document, ImageIO.read(imageFile));
+            float scale = 0.5f; 
+            contentStream.drawImage(image, 50, 400, image.getWidth() * scale, image.getHeight() * scale);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(50, 350);
+            contentStream.showText("Firma administrador general");
+            contentStream.endText();
+
+ 
+            contentStream.close();
+
+            // Guarda el PDF en un archivo
+            String pdfFileName = "Reserva_" + reserva.getIdCarro() + ".pdf";
+            document.save(pdfFileName);
+            document.close();
+
+            File pdfFile = new File(pdfFileName);
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(pdfFile);
+            } else {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "No se puede abrir el visor de PDF predeterminado.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Archivo PDF generado con éxito: " + pdfFileName,
+                    "Generación de PDF",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al generar el archivo PDF",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
 	
 }

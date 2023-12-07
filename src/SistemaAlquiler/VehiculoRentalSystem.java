@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.FileOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.lang.Math;
+import java.lang.reflect.InvocationTargetException;
 
 
 
@@ -53,6 +54,7 @@ public class VehiculoRentalSystem extends JFrame{
     private Map<String, List<String>> segurosReserva;
     private static VehiculoRentalSystem instance;
     private List<Categoria>precioCategoria;
+    private List<IPasarelaDePago> pasarelas;
     
     /**
      * Constructor de la clase VehiculoRentalSystem. Inicializa las listas y mapas necesarios.
@@ -70,6 +72,7 @@ public class VehiculoRentalSystem extends JFrame{
         agendasCarros = new HashMap<>();
         segurosReserva = new HashMap<>();
         precioCategoria = new ArrayList<>();
+        pasarelas = new ArrayList<>();
     }
     
     public List<Empleado> getEmpleados() {
@@ -104,6 +107,10 @@ public class VehiculoRentalSystem extends JFrame{
     	return usuariosYContraseñas;
     }
     
+    public Map<String, List<AgendaCarro>> getAgendasCarros(){
+    	return agendasCarros;
+    }
+    
     public static VehiculoRentalSystem getInstance() {
         if (instance == null) {
             instance = new VehiculoRentalSystem();
@@ -131,7 +138,7 @@ public class VehiculoRentalSystem extends JFrame{
     	String rutaArchivo = "InventarioDatos/carrosDatos";
         String contenido = "\n" + car.getVehiculoId() + "," + car.getmarca() + "," + car.getmodelo() + "," 
     	+ car.getCategoria( )+ "," + car.getColor() + "," + car.getTipoTransmision() + "," + car.getCapacidad() 
-    	+ "," + car.getUbicacion();
+    	+ "," + car.getUbicacion() + "," + car.getTipo() + "," + car.getPrimaSeguro();
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rutaArchivo, true))) {
         	writer.write(contenido);  
@@ -261,6 +268,23 @@ public class VehiculoRentalSystem extends JFrame{
             e.printStackTrace();
         }
 	}
+    
+    public void configuracionPasarelas(){
+    	try (BufferedReader br = new BufferedReader(new FileReader("InventarioDatos/configuracion_pasarelas"))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                // Cargar dinámicamente la clase de la pasarela
+                Class<?> pasarelaClass = Class.forName(linea);
+
+                // Crear una instancia de la clase de la pasarela
+                IPasarelaDePago pasarela = (IPasarelaDePago) pasarelaClass.getDeclaredConstructor().newInstance();
+
+                pasarelas.add(pasarela);
+            }
+        } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
     
     public void modificarPrecioCategoria(Categoria categoria, double nuevoPrecio) {
     	try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Categorias"))) {
@@ -847,8 +871,8 @@ public class VehiculoRentalSystem extends JFrame{
     	if(segurosReserva.containsKey(nombreCliente) == true) {
     		segurosReserva.get(nombreCliente).add(nombreSeguro);
     	}else {
-    		ArrayList<AgendaCarro> listaAgendas = new ArrayList<>();
-    		agendasCarros.put(nombreCliente, listaAgendas);
+    		ArrayList<String> listaSeguros = new ArrayList<>();
+    		segurosReserva.put(nombreCliente, listaSeguros);
     	}
     }
     
@@ -1043,19 +1067,19 @@ public class VehiculoRentalSystem extends JFrame{
         panel.add(fechaLabel);
         panel.add(fechaTextField);
         
-    	
-    	String conductorName = nombreTextField.getText();
-    	String telefono = telefonoTextField.getText();
-    	String correo = correoTextField.getText();
-    	String numeroLicencia = num_licenciaTextField.getText();
-    	String PaisLicencia = paisTextField.getText();
-    	String VencimientoLicenciaStr = fechaTextField.getText();
-    	
     	int result = JOptionPane.showConfirmDialog(null, panel,
                 "Registrar Conductor", JOptionPane.OK_CANCEL_OPTION);
-        
         if (result == JOptionPane.OK_OPTION) {
+        	String conductorName = nombreTextField.getText();
+        	String telefono = telefonoTextField.getText();
+        	String correo = correoTextField.getText();
+        	String numeroLicencia = num_licenciaTextField.getText();
+        	String PaisLicencia = paisTextField.getText();
+        	String VencimientoLicenciaStr = fechaTextField.getText();
+        	System.out.print(VencimientoLicenciaStr);
+        	
         	try {
+        		System.out.print(VencimientoLicenciaStr);
         		SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         		Date VencimientoLicencia = dateFormat.parse(VencimientoLicenciaStr);
             
@@ -1165,10 +1189,14 @@ public class VehiculoRentalSystem extends JFrame{
             AgendaCarro agenda = carroMantenimiento.mantenimiento(fechaInicio, fechaFinal);
            	addAgendasCarros(carroMantenimiento.getVehiculoId(), agenda);
            	escribirAgendasCarros(carroMantenimiento.getVehiculoId(), agenda);
-           	System.out.println("El carro con placa " + carId + "estará en mantenimiento desde " + fechaInicio);
-           	System.out.println("hasta " + fechaFinal);
+           	
+           	SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+           	String fechaInicioStr = dateFormat.format(fechaInicio);
+           	String fechaFinalStr = dateFormat.format(fechaFinal);
+           	
+           	JOptionPane.showMessageDialog(null, "El carro con placa " + carId + "estará en mantenimiento desde " + fechaInicioStr + " hasta " + fechaFinalStr);
         }else {
-           	System.out.println("ID inválido o vehículo no retornado");         
+        	JOptionPane.showMessageDialog(null, "ID inválido o vehículo no retornado");
         }
     }
     
@@ -1183,7 +1211,8 @@ public class VehiculoRentalSystem extends JFrame{
      */
     public double seleccionarSeguros(Reserva actualReserva, double precio, int dias) {
     	final Reserva reservaActual = actualReserva;
-        double totalPrice = precio;
+    	double totalPrice = precio;
+    	
         JPanel myPanel = new JPanel();
         myPanel.setLayout(new BoxLayout(myPanel, BoxLayout.Y_AXIS));
 
@@ -1205,8 +1234,9 @@ public class VehiculoRentalSystem extends JFrame{
             	String seguroOpcion = (String) seguroComboBox.getSelectedItem();
             	for(Seguro seguro: segurosDisponibles ) {
             		if(seguro.getNombre().equals(seguroOpcion)) {
-            			escribirSegurosReserva(reservaActual.getCliente(), seguroOpcion);
             			addSegurosReserva(reservaActual.getCliente(), seguroOpcion);
+            			escribirSegurosReserva(reservaActual.getCliente(), seguroOpcion);
+            			reservaActual.AgregarSeguro(seguro);
             			
             			
             		}
@@ -1228,7 +1258,16 @@ public class VehiculoRentalSystem extends JFrame{
         }
 
         // Actualizar el precio total con el costo de los seguros seleccionados
-        totalPrice = reservaActual.getPrecioConSeguros(precio, dias);
+        double primaSeguros =  0;
+        for(Vehiculo car: cars) {
+    		if(car.getVehiculoId().equals(reservaActual.getIdCarro())) {
+    			primaSeguros = car.getPrimaSeguro();
+    		}
+    	}
+        totalPrice = reservaActual.getPrecioConSeguros(totalPrice, dias, primaSeguros);
+        reservaActual.setPrecio(totalPrice);
+        double precioAbonado = reservaActual.get30ptcPrecio(totalPrice);
+        reservaActual.setPrecioAbonado(precioAbonado);
         JOptionPane.showMessageDialog(null, "Nuevo precio total con seguros: " + totalPrice);
         
         // No llamamos a setVisible(true) aquí para que no se muestre la ventana de selección de seguros antes de tiempo

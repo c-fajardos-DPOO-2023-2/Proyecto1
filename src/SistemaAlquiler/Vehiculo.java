@@ -7,6 +7,7 @@ import SistemaAlquiler.Vehiculo;
 
 
 public class Vehiculo {
+	private String tipo;
 	private String vehiculoID;
     private String marca;
     private String modelo;
@@ -16,6 +17,7 @@ public class Vehiculo {
     private String Categoria;
     private ArrayList<AgendaCarro> AgendaVehiculo;
     private String ubicacion;
+    private double primaSeguro;
 
     /**
      * Constructor para crear un nuevo vehículo con información básica.
@@ -29,7 +31,7 @@ public class Vehiculo {
      * @param capacidad       La capacidad del vehículo (número de pasajeros).
      * @param ubicacion       La ubicación actual del vehículo.
      */
-    public Vehiculo(String vehiculoID, String marca, String modelo, String Categoria, String color, String tipoTransmision, int capacidad, String ubicacion ) {
+    public Vehiculo(String vehiculoID, String marca, String modelo, String Categoria, String color, String tipoTransmision, int capacidad, String ubicacion, String tipo, double primaSeguro ) {
         this.vehiculoID = vehiculoID;
         this.marca = marca;
         this.modelo = modelo;
@@ -39,14 +41,26 @@ public class Vehiculo {
         this.Categoria = Categoria;
         this.AgendaVehiculo = new ArrayList<AgendaCarro>();
         this.ubicacion = ubicacion;
+        this.tipo = tipo;
+        this.primaSeguro = primaSeguro;
     }
     
     //Getters
+    
+    public String getTipo() {
+    	return tipo;
+    }
+    
+    public double getPrimaSeguro() {
+    	return primaSeguro;
+    }
+    
     /**
      * Obtiene el ID del vehículo.
      *
      * @return El ID del vehículo.
      */
+    
     public String getVehiculoId() {
         return vehiculoID;
     }
