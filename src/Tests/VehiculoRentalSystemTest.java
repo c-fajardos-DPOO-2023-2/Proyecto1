@@ -237,5 +237,39 @@ public class VehiculoRentalSystemTest {
             }
         }
     }
+    
+    
+    @Test
+    @DisplayName("Prueba para modificarEstadoReserva")
+    public void testModificarEstadoReserva() throws IOException, ParseException {
+        // Configuración de la prueba
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy/HH/mm");
+        Date fechaEntrega = dateFormat.parse("11/12/2023/12/30");
+        Date fechaRetorno = dateFormat.parse("14/12/2023/12/30");
+        Date nuevaFecha = dateFormat.parse("07/12/2023/13/17");
+        reserva = new Reserva("pequeño", fechaEntrega, fechaRetorno, "Laura", "PQR987", "Sucursal Sur", "Sucursal Norte", "Reservado");
+        // Guarda la reserva original en el archivo
+        vehiculoRentalSystem.escribirReserva(reserva);
+
+        // Llama al método que estás probando
+        vehiculoRentalSystem.modificarEstadoReserva(reserva, "Cancelado", "Laura");
+
+        // Verifica que el estado de la reserva se haya modificado correctamente en el archivo
+        try (BufferedReader reader = new BufferedReader(new FileReader("InventarioDatos/Reservas"))) {
+            boolean estadoModificado = false;
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                String[] reservaInfo = line.split(",");
+                if (reserva.getCliente().equals(reservaInfo[5].trim())) {
+                    assertEquals("Cancelado", reservaInfo[9].trim());
+                    estadoModificado = true;
+                    break;
+                }
+            }
+
+            assertTrue(estadoModificado, "Estado no encontrado o no modificado en las reservas");
+        }
+    }
 
 }

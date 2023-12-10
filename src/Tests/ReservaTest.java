@@ -98,5 +98,5 @@ public class ReservaTest {
     	assertEquals(reserva.getPrecioConSeguros(reserva.getPrecioBase(),dias, primaSeguros), ((reserva.getPrecioBase())+(costoSeguro*dias)));
     	}
 
-
+    
 }
